@@ -18,10 +18,93 @@
 #include "copyright.h"
 #include "system.h"
 #include "addrspace.h"
+#include "synch.h"
 #include "noff.h"
+#include "fd_list.h"
 #ifdef HOST_SPARC
 #include <strings.h>
 #endif
+
+// *** FD_List Class defs *** //
+/**
+ * default constructor
+ */
+FD_List::FD_List( int i_size ) : map( i_size ), list( 0 ), lock( 0 ), size( i_size )
+{
+	list = new void*[ size ];
+	lock = new Lock("FD_List Lock");
+}
+
+FD_List::FD_List() : map( 512 ), list( 0 ), lock( 0 ), size( 512 )
+{
+	list = new void*[ size ];
+	lock = new Lock("FD_List Lock");
+}
+
+/**
+ * destructor
+ */
+FD_List::~FD_List()
+{
+	if( list )
+	{
+		delete list;
+	}
+	if( lock )
+	{
+		delete lock;
+	}
+}
+
+/**
+ * Return a FD (if it exists) from the current FD list
+ */
+void* FD_List::fd_get( int i )
+{
+	/* test if the fd is in range and in the map */
+	if( i < 0 || i >= size ) return 0;
+	if( map.Test( i ) )
+		return list[ i ];
+}
+
+/**
+ * Place an FD into the list (checks if the FD already exists in map)
+ */
+int FD_List::fd_put( void *new_fd )
+{
+	int i; // store the next index for FDs
+	
+	/* check the map for next index... */
+	lock->Acquire();
+	i = map.Find();
+	lock->Release();
+	
+	if( i != -1 )
+		list[ i ] = new_fd;
+	return i;
+}
+
+/**
+ * Remove a FD from the list
+ */
+void* FD_List::fd_remove( int i )
+{
+	void *old_fd; // store the fd to remove for return
+	
+	if( i >= 0 && i < size )
+	{
+		lock->Acquire();
+		if( map.Test( i ) )
+		{
+			map.Clear( i );
+			old_fd = list[ i ];
+			list[ i ] = 0;
+		}
+		lock->Release();
+	}
+	return old_fd;
+}
+// *** End FD_List *** //
 
 //----------------------------------------------------------------------
 // SwapHeader

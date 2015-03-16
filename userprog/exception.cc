@@ -48,16 +48,167 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
+/**
+ * Translate a virtual addr to physical and read size bytes
+ * into buf from the address specified
+ * 
+ * return -1 on an error
+ */
+int
+readVMem( unsigned int virt_addr, int size, char *buf )
+{
+	bool res;
+	int readB = 0; // bytes we read
+	int *phys_addr = new int; // physical address
+	
+	while( readB >= 0 && readB < size )
+	{
+		/* read the data from mem */
+		res = machine->ReadMem( virt_addr, 1, phys_addr );
+		/* store it to the buffer */
+		buf[readB++] = *phys_addr;
+		
+		if( !res ) return -1;
+		
+		/* increment to next byte */
+		virt_addr++;
+	}
+	
+	delete phys_addr;
+	return readB;
+}
+
+/**
+ * Translate a virtual addr to physical and write size bytes
+ * from buf into the address specified
+ * 
+ * return -1 on an error
+ */
+int
+writeVMem( unsigned int virt_addr, int size, char *buf )
+{
+	bool res;
+	int writeB = 0;
+	
+	while( writeB >= 0 && writeB < size )
+	{
+		res = machine->WriteMem( virt_addr, 1, (int)( buf[ writeB++ ] ) );
+		if( !res ) return -1;
+		
+		virt_addr++;
+	}
+	
+	return writeB;
+}
+	
+/** 
+ * Create a new file on the fs for the user with the name stored at
+ * the virtual address specified in addr that is size bytes long.
+ * 
+ * Returns 0 on success.
+ */
+void
+Create_Syscall_Func( unsigned int addr, int size )
+{	
+	/* read the name from mem */
+	char *buf = new char[ size + 1 ];
+	if( readVMem( addr, size, buf ) == -1 )
+	{
+		DEBUG('d', "Failed reading VMem in SysCall.\n" );
+		delete buf;
+		return;
+	}
+	
+	/* null byte.. */
+	buf[ size ] = '\0';
+	
+	/* tell the FS to make the file */
+	fileSystem->Create( buf, 0 );
+	
+	delete[] buf;
+	return;
+}
+
+/**
+ * Open a file specified by the name pointed to by the address addr that is 
+ * size bytes long. If successful the file is stored into the executing processes
+ * adress space's file table and the ID is returned for later reference.
+ * 
+ * On an error -1 is returned.
+ */
+int
+Open_Syscall_Func( unsigned int addr, int size )
+{
+	char *buf = new char[ size + 1 ];
+	OpenFile *file;
+	int fd;
+	
+	/* read the file name */
+	if( readVMem( addr, size, buf ) == -1 )
+	{
+		DEBUG('d', "Failed to read VMem in SysCall.\n");
+		delete[] buf;
+		return -1;
+	}
+	 /* null byte.. */
+	buf[ size ] = '\0';
+	
+	/* tell the FS to open it up */
+	file = fileSystem->Open( buf );
+	delete[] buf;
+	
+	if( file )
+	{
+		/* put it on the threads table */
+		if( ( fd = currentThread->space->open_files.fd_put( file )) == -1 )
+			delete file;
+		return fd;
+	}
+	else return -1;
+}
+
 void
 ExceptionHandler(ExceptionType which)
 {
     int type = machine->ReadRegister(2);
-
-    if ((which == SyscallException) && (type == SC_Halt)) {
-	DEBUG('a', "Shutdown, initiated by user program.\n");
-   	interrupt->Halt();
-    } else {
-	printf("Unexpected user mode exception %d %d\n", which, type);
-	ASSERT(FALSE);
-    }
+	int sys_ret = 0; // store return if one is expected
+				// will get written to r2 at the end of business
+	if( which == SyscallException )
+	{
+		if( type == SC_Halt )
+		{
+			DEBUG('a', "Shutdown, initiated by user program.\n" );
+			interrupt->Halt();
+		}
+		else if( type == SC_Create )
+		{
+			/* r2 = type; r4 = name; r5 = name len */
+			DEBUG('a', "Create, initiated by user program.\n" );
+			Create_Syscall_Func( machine->ReadRegister(4), machine->ReadRegister(5) );
+		}
+		else if( type == SC_Open )
+		{
+			/* r2 = type; r4 = name; r5 = name len */
+			DEBUG('a', "Open, initiated by user program.\n" );
+			sys_ret = Open_Syscall_Func( machine->ReadRegister(4), machine->ReadRegister(5) );
+		}
+		else 
+		{
+			printf( "Unexpected user mode exception %d %d.\n", which, type );
+			ASSERT(FALSE);
+		}
+		/* clean up procedure */
+		machine->WriteRegister( 2, sys_ret ); // write the return code, if 0 still not
+											//important since the caller wont care anyway
+		/* increment the PC now */
+		machine->WriteRegister( PrevPCReg, machine->ReadRegister( PCReg ) );
+		machine->WriteRegister( PCReg, machine->ReadRegister( NextPCReg ) );
+		machine->WriteRegister( NextPCReg, machine->ReadRegister( PCReg ) + 4 );
+		return;
+	}
+	else if ( which != SyscallException )
+	{
+		printf( "Unsupported exception type!\n" );
+		return;
+	}
 }
