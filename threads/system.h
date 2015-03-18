@@ -33,7 +33,7 @@ extern Timer *timer;				// the hardware alarm clock
 #include "machine.h"
 extern Machine* machine;	// user program memory and registers
 
-#include "userprog/addrspace.h"
+#include "addrspace.h"
 /* struct to hold information relevant to an executing process that the OS may need to know */
 typedef struct proc_table_t
 {
@@ -44,7 +44,7 @@ typedef struct proc_table_t
 	int stack[2048];
 }
 
-extern proc_table_t[2048]; // hold some info on processes in the OS
+extern proc_table_t; // hold some info on processes in the OS
 extern int total_process; // global OS counter
 extern Lock *proc_table_lock; // lock for proc table
 extern int active_process;
