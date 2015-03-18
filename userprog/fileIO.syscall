@@ -95,13 +95,21 @@ Write_Syscall_Func( unsigned int virt_addr, int size, int fd )
 	buf = new char[size];
 	
 	/* stdin = error */
-	if( fd == ConsoleInput ) return -1;
+	if( fd == ConsoleInput )
+	{
+		printf( "You cannot write to stdin!\n" );
+		return -1;
+	}
 	
 	/* error  check */
-	if( buf == NULL ) { printf("Failed to alloc buffer in write_syscall\n."); };
+	if( buf == NULL )
+	{
+		printf( "Failed to alloc buffer in write_syscall\n."); 
+		return -1;
+	}
 	if( readVMem( virt_addr, size, buf ) == -1 ) // read the data from mem
 	{
-		printf("Failed to read from memory in write_syscall\n");
+		printf( "Failed to read from memory in write_syscall\n" );
 		delete[] buf;
 		return -1;
 	}
@@ -131,18 +139,93 @@ Write_Syscall_Func( unsigned int virt_addr, int size, int fd )
 		}
 		else
 		{
-			printf( "Failed to write to file in write syscall (bad id)" );
+			printf( "Failed to write to file in write syscall (bad id).\n" );
 			delete[] buf;
 			return -1;
 		}
 	}
 } // write_syscall_func
 
+/**
+ * Read data into the buffer pointed at by virt_addr from the file
+ * specified by fd (at most size bytes).
+ * 
+ * The function will check and return an error if the file is not open.
+ * 
+ * Return -1 on error and the bytes read on success.
+ */
 int
 Read_Syscall_Func( unsigned int virt_addr, int size, int fd )
 {
-	//char *buf;
-	//OpenFile *file;
+	char *buf;
+	OpenFile *file;
+	int res = 0;
+	buf = new char[ size ];
 	
-	return 0;
+	/* checking errors */
+	if( fd == ConsoleOutput )
+	{
+		printf( "You cannot read from stdout!\n" );
+		return -1;
+	}
+	if( buf == NULL )
+	{
+		printf( "Error allocating buffer in read syscall.\n" );
+	}
+	
+	/* read from stdin..
+		NOTE: may require modification when SynchConsole comes into play */
+	if( fd == ConsoleInput )
+	{
+		scanf( "%s", buf );
+		
+		/* copy into memory for user */
+		res = writeVMem( virt_addr, size, buf );
+		if( res == -1 )
+		{
+			printf( "Failed to write into user's addrspace! Data read was not stored.\n" );
+			delete[] buf;
+			return -1;
+		}
+		else
+		{
+			/* we could have written less than size ... */
+			int str_len = strlen( buf );
+			delete[] buf;
+			return str_len-1;
+		}
+	}
+	/* read from file */
+	else
+	{
+		file = (OpenFile *) currentThread->space->open_files.fd_get( fd );
+		if( file )
+		{
+			int read_size = file->Read( buf, size );
+			if( read_size > 0 )
+			{
+				res = writeVMem( virt_addr, size, buf );
+				if( res == -1 )
+				{
+					printf( "Failed to write into user's addrspace! Data read from terminal was not stored.\n" );
+				}
+				delete[] buf;
+				return read_size;
+			}
+			else if( read_size == 0 )
+			{
+				// NOTE: should be removed before production?
+				printf( "Did not read any data on read()\n." );
+				delete[] buf;
+				return read_size;
+			}
+		}
+		else
+		{
+			printf( "Bad id, failed to read from file.\n" );
+			delete[] buf;
+			return -1;
+		}
+	}
+	return -1; // this should be an error if we get here
 }
