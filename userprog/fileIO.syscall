@@ -238,7 +238,7 @@ Read_Syscall_Func( unsigned int virt_addr, int size, int fd )
 void
 Close_Syscall_Func( int fd )
 {
-	OpenFile *file = (OpenFile *)currentThread->space->fileTable.Remove( fd );
+	OpenFile *file = (OpenFile *)currentThread->space->open_files.fd_remove( fd );
 	
 	if( file )
 	{
@@ -246,6 +246,6 @@ Close_Syscall_Func( int fd )
 	}
 	else
 	{
-		print( "Tried to close a file that has not been opened by the current process.\n" );
+		printf( "Tried to close a file that has not been opened by the current process.\n" );
 	}
 } // close syscall
