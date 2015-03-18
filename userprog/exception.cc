@@ -101,7 +101,7 @@ writeVMem( unsigned int virt_addr, int size, char *buf )
 	return writeB;
 }
 	
-#include fileIO.syscall
+#include "fileIO.syscall"
 
 void
 ExceptionHandler(ExceptionType which)
@@ -156,18 +156,13 @@ ExceptionHandler(ExceptionType which)
 		}
 		else if( type == SC_Exec )
 		{
-			DEBUG( 's' "Exec, initiated by user program.\n" );
+			DEBUG( 's', "Exec, initiated by user program.\n" );
 			// sys_ret = Exec_Syscall_Func( machine-ReadRegister(4), machine->ReadRegister(5) );
 		}
 		else if( type == SC_Join )
 		{
 			DEBUG( 's', "Join, initiated by user program.\n" );
 			// Join_Syscall_Func( machine-ReadRegister(4) );
-		}
-		else if( type == SC_Wait )
-		{
-			DEBUG( 's', "Wait, initiated by user program.\n" );
-			// Wait_Syscall_Func( machine-ReadRegister(4), machine-ReadRegister(5) );
 		}
 		else if( type == SC_Yield )
 		{
