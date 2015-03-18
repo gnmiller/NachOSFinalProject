@@ -229,3 +229,23 @@ Read_Syscall_Func( unsigned int virt_addr, int size, int fd )
 	}
 	return -1; // this should be an error if we get here
 }
+
+/**
+ * On success closes the FD specified, on failure does nothing.
+ * There is no error correction, if the file isnt open nothing happens;
+ * in any case there is no return value.
+ */
+void
+Close_Syscall_Func( int fd )
+{
+	OpenFile *file = (OpenFile *)currentThread->space->fileTable.Remove( fd );
+	
+	if( file )
+	{
+		delete file;
+	}
+	else
+	{
+		print( "Tried to close a file that has not been opened by the current process.\n" );
+	}
+} // close syscall
