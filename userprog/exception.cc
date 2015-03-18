@@ -101,138 +101,7 @@ writeVMem( unsigned int virt_addr, int size, char *buf )
 	return writeB;
 }
 	
-/** 
- * Create a new file on the fs for the user with the name stored at
- * the virtual address specified in addr that is size bytes long.
- * 
- * Returns 0 on success.
- */
-void
-Create_Syscall_Func( unsigned int addr, int size )
-{	
-	char *buf = new char[ size + 1 ]; // strlen (size) + \0
-	/* error  check */
-	if( buf == NULL ) { printf("Failed to alloc buffer in create_syscall\n.");
-	if( readVMem( addr, size, buf ) == -1 ) // read the filename from mem
-	{
-		printf("Failed reading VMem in SysCall.\n" );
-		delete buf;
-		return;
-	}
-	
-	/* null byte.. */
-	buf[ size ] = '\0';
-	
-	/* tell the FS to make the file */
-	fileSystem->Create( buf, 0 );
-	DEBUG( 's', "Created file: %s requested by userprog\n" );
-	
-	delete[] buf;
-	return;
-} // create_syscall_func
-
-/**
- * Open a file specified by the name pointed to by the address addr that is 
- * size bytes long. If successful the file is stored into the executing processes
- * adress space's file table and the ID is returned for later reference.
- * 
- * The NachOS FS presented does not appear to have support (at least a way to 
- * interface with the FS in a way that does) for file permissions currently.
- * We have assumed that all files will inherently have the required permissions
- * when it is attempted to open() it.
- * 
- * On an error -1 is returned.
- */
-int
-Open_Syscall_Func( unsigned int addr, int size )
-{
-	char *buf = new char[ size + 1 ];
-	OpenFile *file;
-	int fd;
-	
-	/* error  check */
-	if( buf == NULL ) { printf("Failed to alloc buffer in open_syscall\n.");
-	if( readVMem( addr, size, buf ) == -1 ) // read the filename from mem
-	{
-		printf("Failed to read VMem in SysCall.\n");
-		delete[] buf;
-		return -1;
-	}
-	 /* null byte.. */
-	buf[ size ] = '\0';
-	
-	/* tell the FS to open it up */
-	file = fileSystem->Open( buf );
-	
-	
-	if( file )
-	{
-		/* put it on the threads table */
-		if( ( fd = currentThread->space->open_files.fd_put( file )) == -1 )
-			delete file;
-		DEBUG( 's', "Opened file: %s requested by userprog\n" );
-		return fd;
-	}
-	delete[] buf;
-	else return -1;
-} // open_syscall_func
-
-/**
- * Accessing the memory at location virt_addr, reading the data to be written
- * Copy it into a buffer then write the contents of that buffer to the file 
- * specified in ID; if ID is stdin (ConsoleInput in NachOS) it is an error.
- *
- * Returns -1 on error and the amount of characters written otherwise.
- */
-int
-Write_Syscall_Func( unsigned int virt_addr, int size, int fd )
-{
-	char *buf;
-	OpenFile *file;
-	buf = new char[size];
-	
-	/* stdin = error */
-	if( id == ConsoleInput ) return -1;
-	
-	/* error  check */
-	if( buf == NULL ) { printf("Failed to alloc buffer in write_syscall\n."); };
-	if( readVMem( virt_addr, size, buf ) == -1 ) // read the data from mem
-	{
-		printf("Failed to read from memory in write_syscall\n");
-		delete[] buf;
-		return -1;
-	}
-	
-	/* output to console .. 
-		NOTE: may need to be updated when/if SynchConsole is implemented */
-	if( fd == ConsoleOutput )
-	{
-		for( int i = 0; i < size; ++i )
-		{
-			printf("%c", buf[i] ); // write to stdout directly
-		}
-		delete[] buf;
-		return i;
-	}
-	/* write to the file specified if not stdout */
-	else
-	{
-		/* check if we have the fd open */
-		f = currentThread->space->open_files->fd_get( id )
-		if( f > 1 ) // no stderror just in (0) out (1)...
-		{
-			int temp = f->Write( buf, size );			
-			delete[] buf;
-			return temp;
-		}
-		else
-		{
-			printf( "Failed to write to file in write syscall (bad id)" );
-			delete[] buf;
-			return -1;
-		}
-	}
-} // write_syscall_func
+#include fileIO.syscall
 
 void
 ExceptionHandler(ExceptionType which)
@@ -245,23 +114,66 @@ ExceptionHandler(ExceptionType which)
 		/* debug flag s for syscall? */
 		if( type == SC_Halt )
 		{
-			DEBUG('s', "Shutdown, initiated by user program.\n" );
+			DEBUG( 's', "Shutdown, initiated by user program.\n" );
 			interrupt->Halt();
 		}
 		else if( type == SC_Create )
 		{
-			DEBUG('s', "Create, initiated by user program.\n" );
+			DEBUG( 's', "Create, initiated by user program.\n" );
 			Create_Syscall_Func( machine->ReadRegister(4), machine->ReadRegister(5) );
 		}
 		else if( type == SC_Open )
 		{
-			DEBUG('s', "Open, initiated by user program.\n" );
+			DEBUG( 's', "Open, initiated by user program.\n" );
 			sys_ret = Open_Syscall_Func( machine->ReadRegister(4), machine->ReadRegister(5) );
 		}
 		else if( type == SC_Write )
 		{
-			DEBUG('s', "Write, initiated by user program.\n" );
-			sys_ret = Write_Syscall_Func( machine->ReadRegister(4), machine->ReadRegister(5) );
+			DEBUG( 's', "Write, initiated by user program.\n" );
+			sys_ret = Write_Syscall_Func( machine->ReadRegister(4),
+										  machine->ReadRegister(5), machine->ReadRegister(6) );
+		}
+		else if( type == SC_Read )
+		{
+			DEBUG( 's', "Read, initiated by user program.\n" );
+			sys_ret = Read_Syscall_Func( machine->ReadRegister(4),
+										  machine->ReadRegister(5), machine->ReadRegister(6) );
+		}
+		else if( type == SC_Close )
+		{
+			DEBUG( 's', "Close, initiated by user program.\n" );
+			// Close_Syscall_Func( machine->ReadRegister(4) );
+		}
+		else if( type == SC_Exit )
+		{
+			DEBUG( 's', "Exit, initiated by user program.\n" );
+			// Exit_Syscall_Func( machine->ReadRegister(4) );
+		}
+		else if( type == SC_Fork )
+		{
+			DEBUG( 's', "Fork, initiated by user program.\n" );
+			// Fork_Syscall_Func( machine->ReadRegister(4) );
+		}
+		else if( type == SC_Exec )
+		{
+			DEBUG( 's' "Exec, initiated by user program.\n" );
+			// sys_ret = Exec_Syscall_Func( machine-ReadRegister(4), machine->ReadRegister(5) );
+		}
+		else if( type == SC_Join )
+		{
+			DEBUG( 's', "Join, initiated by user program.\n" );
+			// Join_Syscall_Func( machine-ReadRegister(4) );
+		}
+		else if( type == SC_Wait )
+		{
+			DEBUG( 's', "Wait, initiated by user program.\n" );
+			// Wait_Syscall_Func( machine-ReadRegister(4), machine-ReadRegister(5) );
+		}
+		else if( type == SC_Yield )
+		{
+			DEBUG( 's', "Yield, initiated by user program.\n" );
+			// Yield_Syscall_Func( machine-ReadRegister(4) );
+		}
 		else 
 		{
 			printf( "Unexpected user mode exception %d %d.\n", which, type );
