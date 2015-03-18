@@ -66,10 +66,8 @@ readVMem( unsigned int virt_addr, int size, char *buf )
 		/* read the data from mem */
 		res = machine->ReadMem( virt_addr, 1, phys_addr );
 		/* store it to the buffer */
-		buf[readB++] = *phys_addr;
-		
-		if( !buf ) return -1;
-		if( !res ) return -1;
+		buf[readB++] = *phys_addr;		
+		if( res != 0 ) return -1;
 		
 		/* increment to next byte */
 		virt_addr++;
@@ -94,8 +92,9 @@ writeVMem( unsigned int virt_addr, int size, char *buf )
 	while( writeB >= 0 && writeB < size )
 	{
 		res = machine->WriteMem( virt_addr, 1, (int)( buf[ writeB++ ] ) );
-		if( !res ) return -1;
+		if( res != 0 ) return -1;
 		
+		/* increment */
 		virt_addr++;
 	}
 	
@@ -113,7 +112,7 @@ Create_Syscall_Func( unsigned int addr, int size )
 {	
 	char *buf = new char[ size + 1 ]; // strlen (size) + \0
 	/* error  check */
-	if( !buf ) { printf("Failed to alloc buffer in create_syscall\n.");
+	if( buf == NULL ) { printf("Failed to alloc buffer in create_syscall\n.");
 	if( readVMem( addr, size, buf ) == -1 ) // read the filename from mem
 	{
 		printf("Failed reading VMem in SysCall.\n" );
@@ -126,15 +125,21 @@ Create_Syscall_Func( unsigned int addr, int size )
 	
 	/* tell the FS to make the file */
 	fileSystem->Create( buf, 0 );
+	DEBUG( 's', "Created file: %s requested by userprog\n" );
 	
 	delete[] buf;
 	return;
-}
+} // create_syscall_func
 
 /**
  * Open a file specified by the name pointed to by the address addr that is 
  * size bytes long. If successful the file is stored into the executing processes
  * adress space's file table and the ID is returned for later reference.
+ * 
+ * The NachOS FS presented does not appear to have support (at least a way to 
+ * interface with the FS in a way that does) for file permissions currently.
+ * We have assumed that all files will inherently have the required permissions
+ * when it is attempted to open() it.
  * 
  * On an error -1 is returned.
  */
@@ -146,7 +151,7 @@ Open_Syscall_Func( unsigned int addr, int size )
 	int fd;
 	
 	/* error  check */
-	if( !buf ) { printf("Failed to alloc buffer in open_syscall\n.");
+	if( buf == NULL ) { printf("Failed to alloc buffer in open_syscall\n.");
 	if( readVMem( addr, size, buf ) == -1 ) // read the filename from mem
 	{
 		printf("Failed to read VMem in SysCall.\n");
@@ -158,22 +163,24 @@ Open_Syscall_Func( unsigned int addr, int size )
 	
 	/* tell the FS to open it up */
 	file = fileSystem->Open( buf );
-	delete[] buf;
+	
 	
 	if( file )
 	{
 		/* put it on the threads table */
 		if( ( fd = currentThread->space->open_files.fd_put( file )) == -1 )
 			delete file;
+		DEBUG( 's', "Opened file: %s requested by userprog\n" );
 		return fd;
 	}
+	delete[] buf;
 	else return -1;
-}
+} // open_syscall_func
 
 /**
  * Accessing the memory at location virt_addr, reading the data to be written
  * Copy it into a buffer then write the contents of that buffer to the file 
- * specified in ID; if ID is stdout (ConsoleInput in NachOS) it is an error.
+ * specified in ID; if ID is stdin (ConsoleInput in NachOS) it is an error.
  *
  * Returns -1 on error and the amount of characters written otherwise.
  */
@@ -184,18 +191,49 @@ Write_Syscall_Func( unsigned int virt_addr, int size, int fd )
 	OpenFile *file;
 	buf = new char[size];
 	
-	/* stdout? */
+	/* stdin = error */
 	if( id == ConsoleInput ) return -1;
 	
 	/* error  check */
-	if( !buf ) { printf("Failed to alloc buffer in write_syscall\n."); };
+	if( buf == NULL ) { printf("Failed to alloc buffer in write_syscall\n."); };
 	if( readVMem( virt_addr, size, buf ) == -1 ) // read the data from mem
 	{
 		printf("Failed to read from memory in write_syscall\n");
 		delete[] buf;
 		return -1;
 	}
-}
+	
+	/* output to console .. 
+		NOTE: may need to be updated when/if SynchConsole is implemented */
+	if( fd == ConsoleOutput )
+	{
+		for( int i = 0; i < size; ++i )
+		{
+			printf("%c", buf[i] ); // write to stdout directly
+		}
+		delete[] buf;
+		return i;
+	}
+	/* write to the file specified if not stdout */
+	else
+	{
+		/* check if we have the fd open */
+		f = currentThread->space->open_files->fd_get( id )
+		if( f > 1 ) // no stderror just in (0) out (1)...
+		{
+			int temp = f->Write( buf, size );			
+			delete[] buf;
+			return temp;
+		}
+		else
+		{
+			printf( "Failed to write to file in write syscall (bad id)" );
+			delete[] buf;
+			return -1;
+		}
+	}
+} // write_syscall_func
+
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -204,23 +242,26 @@ ExceptionHandler(ExceptionType which)
 				// will get written to r2 at the end of business
 	if( which == SyscallException )
 	{
+		/* debug flag s for syscall? */
 		if( type == SC_Halt )
 		{
-			DEBUG('a', "Shutdown, initiated by user program.\n" );
+			DEBUG('s', "Shutdown, initiated by user program.\n" );
 			interrupt->Halt();
 		}
 		else if( type == SC_Create )
 		{
-			/* r2 = type; r4 = name; r5 = name len */
-			DEBUG('a', "Create, initiated by user program.\n" );
+			DEBUG('s', "Create, initiated by user program.\n" );
 			Create_Syscall_Func( machine->ReadRegister(4), machine->ReadRegister(5) );
 		}
 		else if( type == SC_Open )
 		{
-			/* r2 = type; r4 = name; r5 = name len */
-			DEBUG('a', "Open, initiated by user program.\n" );
+			DEBUG('s', "Open, initiated by user program.\n" );
 			sys_ret = Open_Syscall_Func( machine->ReadRegister(4), machine->ReadRegister(5) );
 		}
+		else if( type == SC_Write )
+		{
+			DEBUG('s', "Write, initiated by user program.\n" );
+			sys_ret = Write_Syscall_Func( machine->ReadRegister(4), machine->ReadRegister(5) );
 		else 
 		{
 			printf( "Unexpected user mode exception %d %d.\n", which, type );
