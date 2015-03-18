@@ -103,6 +103,7 @@ writeVMem( unsigned int virt_addr, int size, char *buf )
 }
 	
 #include "fileIO.syscall"
+#include "proc.syscall"
 
 void
 ExceptionHandler(ExceptionType which)

@@ -1,0 +1,107 @@
+/* incomplete definition
+void
+Exit_Syscall_Func( int exit_code )
+{
+	if( currentThread->currentThreadID != -1 && currentThread->currentProcID != -1 )
+	{
+		processTableLock->Acquire();
+		if( processTable[ currentThread->currentProcID ].AliveThreadCount == 0 )
+		{
+			if( ActiveNoOfProcess == 1 )
+			{
+				processTableLock->Release();
+				interrupt->Halt();
+			}
+		}
+		else
+		{
+			
+		}
+	}
+}
+*/
+
+/**
+ * Called after Exec syscall is completed (as part of the syscall).
+ * Is utilized by the created thread as its "threadFunc" when it is
+ * created in the syscall func. 
+ * 
+ * arg is unused and exists only to define the function as required by
+ * the standard for a threadFunc.
+ */
+void
+Exec_threadFunc( int arg )
+{
+	/* setup new threads registers */
+	currentThread->space->initRegisters();
+	/* prepping to context switch */
+	currentThread->space->RestoreState();
+	/* context switch (run the new process) */
+	machine->Run();
+}
+
+/**
+ * Takes the name in the memory address indicated by fileName
+ * that is size bytes long and attempts to create a new user
+ * process from the binary specified by fileName
+ * 
+ * Returns an identifier to the newly created process on success
+ * or -1 on fail.
+ */
+SpaceId
+Exec_SysCall_Func( unsigned int fileName, int size )
+{
+	OpenFile *binary;
+	char *buf = new char( size );
+	if( size <= 0 )
+	{
+		printf( "Invalid filename for exec call" );
+		return -1;
+	}
+	
+	if( readVMem( fileName, size, buf ) == -1 )
+	{
+		printf( "Failed to read memory for file name.\n" );
+		delete buf;
+		return -1;
+	} buf[size] = '\0';
+	
+	binary = fileSystem->Open( buf );
+	delete buf;
+	
+	if( !binary )
+	{
+		printf( "Error opening binary for exec.\n" );
+		return -1;
+	}
+	
+	/* make an address space for the new process */
+	AddrSpace *newProcAddrSpace = new AddrSpace( binary );
+	
+	/* add it to process table */
+	proccess_table_lock->Acquire();
+	/* proc table critical section start */
+	++active_process;
+	process_table[total_process].myspace = newProcAddrSpace;
+	process_table[total_process].pid = total_process;
+	process_table[total_process].totthreads = 0;
+	process_table[total_process].alivethreads = 0;
+	
+	/* setup the stack for the new process */
+	int top = (newProcAddrSpace->getNumPages()*PageSize)-16; // calculate the top of the new stack
+	proccess_table[total_process].stack[0] = top; // tell him where it is
+	/* setup the thread to start this process */
+	Thread *newThread = new Thread( "NewThread--ExecSyscall" );
+	newThread->space = newProcAddrSpace;
+	newThread->currentThreadID = 0;
+	newThread->currentProcID = total_process;
+	++total_process;
+	/* process table critical section end */
+	process_table_lock.Release();
+	
+	/* now we start the thread and cleanup */
+	newThread->((VoidFuncPtr) Exec_threadFunc, 0);
+	
+	/* return the new address space */
+	return newThread->space;
+}
