@@ -68,6 +68,7 @@ readVMem( unsigned int virt_addr, int size, char *buf )
 		/* store it to the buffer */
 		buf[readB++] = *phys_addr;
 		
+		if( !buf ) return -1;
 		if( !res ) return -1;
 		
 		/* increment to next byte */
@@ -110,11 +111,12 @@ writeVMem( unsigned int virt_addr, int size, char *buf )
 void
 Create_Syscall_Func( unsigned int addr, int size )
 {	
-	/* read the name from mem */
-	char *buf = new char[ size + 1 ];
-	if( readVMem( addr, size, buf ) == -1 )
+	char *buf = new char[ size + 1 ]; // strlen (size) + \0
+	/* error  check */
+	if( !buf ) { printf("Failed to alloc buffer in create_syscall\n.");
+	if( readVMem( addr, size, buf ) == -1 ) // read the filename from mem
 	{
-		DEBUG('d', "Failed reading VMem in SysCall.\n" );
+		printf("Failed reading VMem in SysCall.\n" );
 		delete buf;
 		return;
 	}
@@ -143,10 +145,11 @@ Open_Syscall_Func( unsigned int addr, int size )
 	OpenFile *file;
 	int fd;
 	
-	/* read the file name */
-	if( readVMem( addr, size, buf ) == -1 )
+	/* error  check */
+	if( !buf ) { printf("Failed to alloc buffer in open_syscall\n.");
+	if( readVMem( addr, size, buf ) == -1 ) // read the filename from mem
 	{
-		DEBUG('d', "Failed to read VMem in SysCall.\n");
+		printf("Failed to read VMem in SysCall.\n");
 		delete[] buf;
 		return -1;
 	}
@@ -167,6 +170,32 @@ Open_Syscall_Func( unsigned int addr, int size )
 	else return -1;
 }
 
+/**
+ * Accessing the memory at location virt_addr, reading the data to be written
+ * Copy it into a buffer then write the contents of that buffer to the file 
+ * specified in ID; if ID is stdout (ConsoleInput in NachOS) it is an error.
+ *
+ * Returns -1 on error and the amount of characters written otherwise.
+ */
+int
+Write_Syscall_Func( unsigned int virt_addr, int size, int fd )
+{
+	char *buf;
+	OpenFile *file;
+	buf = new char[size];
+	
+	/* stdout? */
+	if( id == ConsoleInput ) return -1;
+	
+	/* error  check */
+	if( !buf ) { printf("Failed to alloc buffer in write_syscall\n."); };
+	if( readVMem( virt_addr, size, buf ) == -1 ) // read the data from mem
+	{
+		printf("Failed to read from memory in write_syscall\n");
+		delete[] buf;
+		return -1;
+	}
+}
 void
 ExceptionHandler(ExceptionType which)
 {
