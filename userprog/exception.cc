@@ -144,7 +144,7 @@ ExceptionHandler(ExceptionType which)
 		else if( type == SC_Close )
 		{
 			DEBUG( 's', "Close, initiated by user program.\n" );
-			// Close_Syscall_Func( machine->ReadRegister(4) );
+			Close_Syscall_Func( machine->ReadRegister(4) );
 		}
 		else if( type == SC_Exit )
 		{
