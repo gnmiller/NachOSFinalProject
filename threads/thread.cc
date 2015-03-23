@@ -50,6 +50,10 @@ Thread::Thread(char* debugName, int priority)
 }
 #endif
 
+
+
+
+
 //----------------------------------------------------------------------
 // Thread::~Thread
 // 	De-allocate a thread.
@@ -69,7 +73,32 @@ Thread::~Thread()
     ASSERT(this != currentThread);
     if (stack != NULL)
 	DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
+	
+#ifdef USER_PROGRAM
+	delete space;
+	if(child == NULL)
+		return;
+	ChildThread* record = child;
+	while(record != child)
+	{
+		record = record->next;
+		record->prev->thread->parentRecord = NULL; //clear its child's record
+		delete record->prev;
+	}
+	child = NULL;
+	
+	if(parentRecord != NULL) //deal with its parent's record
+	{
+		ASSERT(parentRecord->thread == this);
+		if(returnStatus = -1)
+			returnStatus = 0;
+		parentRecord->thread = NULL; //parent record would not have this child anymore
+		parentRecord->status = returnStatus;
+		parentRecord->join_sem->V(); //if parent is waiting on a join(), release them;
+	}
+#endif
 }
+
 
 //----------------------------------------------------------------------
 // Thread::Fork
@@ -330,4 +359,85 @@ Thread::RestoreUserState()
     for (int i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister(i, userRegisters[i]);
 }
+
+Thread::Thread(char* threadName, Thread* parent)
+{
+	name = threadName;
+	stackTop = NULL;
+    stack = NULL;
+    status = JUST_CREATED;
+    priorityLevel = 1;
+    
+    //USER_PROGRAM
+    returnStatus = -1;
+    space = NULL;
+    parentRecord = NULL;
+    child = NULL;
+    nextID = 0;
+    
+    for(int i = 0; i < NumTotalRegs; i++)
+        userRegisters[i] = 0;
+	if(!parent)
+		return;
+	if(parent->child == NULL)
+	{
+		parentRecord = new ChildThread(this);
+		parent->child = parentRecord;
+		parent->child->id = parent->nextID++;
+	}
+	else
+	{
+		ChildThread* firstChild = parent->child;
+		parentRecord = new ChildThread(this);
+		parentRecord->id = parent->nextID++;
+		
+		parentRecord->prev = firstChild->prev;
+		parentRecord->next = firstChild;
+		firstChild->prev->next = parentRecord;
+		firstChild->prev = parentRecord;
+	}
+}
+
+void Thread::notifyParent(int status)
+{
+	if(parentRecord != NULL)//this thread has parent
+	{
+		DEBUG('t', "Set record to %d\n", status);
+		parentRecord->status = status;
+		parentRecord->thread = NULL;
+		parentRecord->join_sem->V(); //signal
+	}
+}
+
+int Thread::getID() {
+    if(parentRecord != NULL) {
+        return parentRecord->id;
+    }
+    DEBUG('t', "Called getID on thread %p with no parent.\n", this);
+    return -1;
+}
+
+//----------------------------------------------------------------------
+// ChildThread::ChildThread
+//      Create an element in the linked list of children of this thread. The
+//      argument 'thread' is the new thread being inserted.
+//
+//      The linked list is doubly linked, and circular.
+//----------------------------------------------------------------------
+ChildThread::ChildThread(Thread* t) {
+    status = -1;
+    join_sem = new Semaphore("ChildThread", 0);
+    thread = t;
+
+    next = prev = this;
+}
+
+//----------------------------------------------------------------------
+// ChildThread::~ChildThread
+//      Remove this thread from the parent's record.
+//----------------------------------------------------------------------
+ChildThread::~ChildThread() {
+    delete join_sem;
+}
+
 #endif

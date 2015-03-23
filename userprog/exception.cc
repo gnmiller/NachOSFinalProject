@@ -167,6 +167,67 @@ Open_Syscall_Func( unsigned int addr, int size )
 	else return -1;
 }
 
+/**
+ * Create a process in SC_Exec
+**/
+void createProcess(int arg)
+{
+	currentThread->space->InitRegisters();
+	currentThread->space->RestoreState();
+	machine->Run();
+}
+
+/**
+ * Execute a file
+**/
+int 
+Exec_Syscall_Func()
+{
+	char *fileName = currentThread->space->read(machine->ReadRegister(4), 0); //get exe name from register 4
+	int args = machine->ReadRegister(5);
+	Thread* thread = new Thread("user", currentThread);
+	DEBUG('t', "\nExe File Name: %s\n", fileName);
+	SpaceId sid = -1;
+	
+	try
+	{
+		thread->space = new AddrSpace(fileName);
+		if(args != 0)
+			thread->space->createStackArgs(args, fileName);
+		sid = thread->getID();
+		thread->Fork(&createProcess, 0);
+		
+		DEBUG('t', "Successfully create EXE %s with ID %d\n", fileName, sid);
+	}
+	catch (int e)
+	{
+		DEBUG('t', "Failed to create address space for EXE %s\n", fileName);
+		delete thread;
+		return -1;
+	}
+	machine->WriteRegister(2, (int)sid);
+	int pc = machine->ReadRegister(PCReg);
+	machine->WriteRegister(PrevPCReg, pc);
+	pc = machine->ReadRegister(NextPCReg);
+	machine->WriteRegister(PCReg, pc);
+	pc += 4;
+	machine->WriteRegister(NextPCReg, pc);
+	
+	return 0;
+	
+}
+
+/**
+ * Exit current executable
+**/
+void 
+Exit_Syscall_Func()
+{
+	int status = machine->ReadRegister(4);
+	currentThread->notifyParent(status);
+	currentThread->Finish();
+}
+
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -191,6 +252,16 @@ ExceptionHandler(ExceptionType which)
 			/* r2 = type; r4 = name; r5 = name len */
 			DEBUG('a', "Open, initiated by user program.\n" );
 			sys_ret = Open_Syscall_Func( machine->ReadRegister(4), machine->ReadRegister(5) );
+		}
+		else if( type = SC_Exec)
+		{
+			DEBUG('a', "Exec, initiated by user program.\n" );
+			sys_ret = Exec_Syscall_Func();
+		}
+		else if( type = SC_Exit)
+		{
+			DEBUG('a', "Exit, initiated by user program.\n");
+			Exit_Syscall_Func();
 		}
 		else 
 		{
