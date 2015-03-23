@@ -43,6 +43,24 @@
 #ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
+#include "list.h"
+
+class Thread;
+class Semaphore;
+class ChildThread 
+{
+public:
+    ChildThread(Thread* t);
+    ~ChildThread();
+
+    Thread* thread;
+    int status;
+    int id;
+    Semaphore* join_sem;
+    ChildThread* next;
+    ChildThread* prev;
+};
+
 #endif
 
 // CPU register state to be saved on context switch.  
@@ -83,6 +101,9 @@ class Thread {
   public:
     Thread(char* debugName);		// initialize a Thread 
     Thread(char* debugName, int priority); //constructor for priority
+#ifdef USER_PROGRAM
+	Thread(char* debugName, Thread* parent); //create thread from its parent    
+#endif
     ~Thread(); 				// deallocate a Thread
 					// NOTE -- thread being deleted
 					// must not be running when delete 
@@ -126,12 +147,21 @@ class Thread {
 // while executing kernel code.
 
     int userRegisters[NumTotalRegs];	// user-level CPU register state
+    
+    ChildThread* parentRecord; //list keeps the record of its children
 
   public:
     void SaveUserState();		// save user-level register state
     void RestoreUserState();		// restore user-level register state
 	
     AddrSpace *space;			// User code this thread is running.
+    
+    void notifyParent(int status);
+    int getID();
+    
+    ChildThread* child;
+    int nextID;//next ID for its child
+    int returnStatus;
 #endif
 };
 

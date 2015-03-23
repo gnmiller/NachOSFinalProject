@@ -19,13 +19,13 @@ Interrupt *interrupt;			// interrupt status
 Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
-
+SynchDisk* synchDisk;
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
 #endif
 
 #ifdef FILESYS
-SynchDisk   *synchDisk;
+//SynchDisk   *synchDisk;
 #endif
 
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
