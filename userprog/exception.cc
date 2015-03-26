@@ -122,7 +122,7 @@ int
 Exec_Syscall_Func()
 {
 	char *fileName = currentThread->space->read(machine->ReadRegister(4), 0); //get exe name from register 4
-	int args = machine->ReadRegister(5);
+	int args = machine->ReadRegister(5);//get argument from register 5
 	Thread* thread = new Thread("user", currentThread);
 	DEBUG('t', "\nExe File Name: %s\n", fileName);
 	SpaceId sid = -1;
@@ -210,7 +210,8 @@ ExceptionHandler(ExceptionType which)
 		else if( type == SC_Exit )
 		{
 			DEBUG( 's', "Exit, initiated by user program.\n" );
-			// Exit_Syscall_Func( machine->ReadRegister(4) );
+			printf("Exiting in SC_EXIT\n");
+			Exit_Syscall_Func();
 		}
 		else if( type == SC_Fork )
 		{
@@ -220,7 +221,7 @@ ExceptionHandler(ExceptionType which)
 		else if( type == SC_Exec )
 		{
 			DEBUG( 's', "Exec, initiated by user program.\n" );
-			// sys_ret = Exec_Syscall_Func( machine-ReadRegister(4), machine->ReadRegister(5) );
+			sys_ret = Exec_Syscall_Func();
 		}
 		else if( type == SC_Join )
 		{
@@ -245,6 +246,23 @@ ExceptionHandler(ExceptionType which)
 		machine->WriteRegister( PCReg, machine->ReadRegister( NextPCReg ) );
 		machine->WriteRegister( NextPCReg, machine->ReadRegister( PCReg ) + 4 );
 		return;
+	}
+	else if( which == PageFaultException)
+	{
+		int badAddr = machine->ReadRegister(BadVAddrReg);
+		DEBUG('t', "PageFault on Address: 0x%x, on Page: %d\n", badAddr, badAddr / PageSize);
+		if(currentThread->space == NULL)
+		{
+			DEBUG('t', "Pagefault on thread with no address space.\n");
+            currentThread->notifyParent(-1);
+            currentThread->Finish();
+		}
+		if(currentThread->space->load_page(badAddr/PageSize) == -1)
+		{
+			DEBUG('t', "Cannot load virtual page: %d\n", badAddr/PageSize);
+			currentThread->notifyParent(-1);
+            currentThread->Finish();
+		}
 	}
 	else if ( which != SyscallException )
 	{

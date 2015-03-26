@@ -162,7 +162,8 @@ AddrSpace::AddrSpace(OpenFile *executable)
 						// to leave room for the stack
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
-
+    //NumPhysPages defined in machine.h ( = 32)
+	printf("numPages: %d, NumPhysPages: %d\n", numPages, NumPhysPages);
     ASSERT(numPages <= NumPhysPages);		// check we're not trying
 						// to run anything too big --
 						// at least until we have
@@ -420,7 +421,7 @@ AddrSpace::AddrSpace(char* name)
 
     //Save this so the address space can be constructed later.
     filename = new char[strlen(name)];
-    strcpy(filename, name);
+    strcpy(filename, name); //copy including null terminator
 
     //Read the executable header.
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);

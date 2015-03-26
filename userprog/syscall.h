@@ -60,6 +60,7 @@ typedef int SpaceId;
  * address space identifier
  */
 SpaceId Exec(char *name);
+//SpaceId Exec(char* name, char* args[]);
  
 /* Only return once the the user program "id" has finished.  
  * Return the exit status.
