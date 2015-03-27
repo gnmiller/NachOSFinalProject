@@ -10,12 +10,7 @@ Create_Syscall_Func( unsigned int addr, int size )
 	char *buf = new char[ size + 1 ]; // strlen (size) + \0
 	/* error  check */
 	if( buf == NULL ) { printf("Failed to alloc buffer in create_syscall\n."); }
-	if( readVMem( addr, size, buf ) == -1 ) // read the filename from mem
-	{
-		printf("Failed reading VMem in SysCall.\n" );
-		delete buf;
-		return;
-	}
+	buf = currentThread->space->read( addr, size );
 	
 	/* null byte.. */
 	buf[ size ] = '\0';
@@ -49,13 +44,9 @@ Open_Syscall_Func( unsigned int addr, int size )
 	
 	/* error  check */
 	if( buf == NULL ) { printf("Failed to alloc buffer in open_syscall\n."); }
-	if( readVMem( addr, size, buf ) == -1 ) // read the filename from mem
-	{
-		printf("Failed to read VMem in SysCall.\n");
-		delete[] buf;
-		return -1;
-	}
-	 /* null byte.. */
+	buf = read( addr, size );
+	
+	/* null byte.. */
 	buf[ size ] = '\0';
 	
 	/* tell the FS to open it up */
@@ -101,18 +92,13 @@ Write_Syscall_Func( unsigned int virt_addr, int size, int fd )
 		return -1;
 	}
 	
-	/* error  check */
+	/* error check */
 	if( buf == NULL )
 	{
 		printf( "Failed to alloc buffer in write_syscall\n."); 
 		return -1;
 	}
-	if( readVMem( virt_addr, size, buf ) == -1 ) // read the data from mem
-	{
-		printf( "Failed to read from memory in write_syscall\n" );
-		delete[] buf;
-		return -1;
-	}
+	buf = read( addr, size );
 	
 	/* output to console .. 
 		NOTE: may need to be updated when/if SynchConsole is implemented */
@@ -133,7 +119,7 @@ Write_Syscall_Func( unsigned int virt_addr, int size, int fd )
 		file = (OpenFile*) currentThread->space->open_files.fd_get( fd );
 		if( file ) // not null, etc
 		{
-			int temp = file->Write( buf, size );			
+			int temp = file->Write( buf, size ); // write to file
 			delete[] buf;
 			return temp;
 		}
@@ -180,13 +166,7 @@ Read_Syscall_Func( unsigned int virt_addr, int size, int fd )
 		scanf( "%s", buf );
 		
 		/* copy into memory for user */
-		res = writeVMem( virt_addr, size, buf );
-		if( res == -1 )
-		{
-			printf( "Failed to write into user's addrspace! Data read was not stored.\n" );
-			delete[] buf;
-			return -1;
-		}
+		write( virt_addr, buf, size );
 		else
 		{
 			/* we could have written less than size ... */
@@ -204,11 +184,7 @@ Read_Syscall_Func( unsigned int virt_addr, int size, int fd )
 			int read_size = file->Read( buf, size );
 			if( read_size > 0 )
 			{
-				res = writeVMem( virt_addr, size, buf );
-				if( res == -1 )
-				{
-					printf( "Failed to write into user's addrspace! Data read from terminal was not stored.\n" );
-				}
+				write( virt_addr, buf, size );
 				delete[] buf;
 				return read_size;
 			}
