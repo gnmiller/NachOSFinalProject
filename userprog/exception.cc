@@ -49,59 +49,6 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
-/**
- * Translate a virtual addr to physical and read size bytes
- * into buf from the address specified
- * 
- * return -1 on an error
- */
-int
-readVMem( unsigned int virt_addr, int size, char *buf )
-{
-	bool res;
-	int readB = 0; // bytes we read
-	int *phys_addr = new int; // physical address
-	
-	while( readB >= 0 && readB < size )
-	{
-		/* read the data from mem */
-		res = machine->ReadMem( virt_addr, 1, phys_addr );
-		/* store it to the buffer */
-		buf[readB++] = *phys_addr;		
-		if( res != 0 ) return -1;
-		
-		/* increment to next byte */
-		virt_addr++;
-	}
-	
-	delete phys_addr;
-	return readB;
-}
-
-/**
- * Translate a virtual addr to physical and write size bytes
- * from buf into the address specified
- * 
- * return -1 on an error
- */
-int
-writeVMem( unsigned int virt_addr, int size, char *buf )
-{
-	bool res;
-	int writeB = 0;
-	
-	while( writeB >= 0 && writeB < size )
-	{
-		res = machine->WriteMem( virt_addr, 1, (int)( buf[ writeB++ ] ) );
-		if( res != 0 ) return -1;
-		
-		/* increment */
-		virt_addr++;
-	}
-	
-	return writeB;
-}
-	
 #include "fileIO.syscall"
 //#include "proc.syscall"
 
@@ -194,18 +141,18 @@ ExceptionHandler(ExceptionType which)
 		{
 			DEBUG( 's', "Write, initiated by user program.\n" );
 			sys_ret = Write_Syscall_Func( machine->ReadRegister(4),
-										  machine->ReadRegister(5), machine->ReadRegister(6) );
+				machine->ReadRegister(5), machine->ReadRegister(6) );
 		}
 		else if( type == SC_Read )
 		{
 			DEBUG( 's', "Read, initiated by user program.\n" );
 			sys_ret = Read_Syscall_Func( machine->ReadRegister(4),
-										  machine->ReadRegister(5), machine->ReadRegister(6) );
+				machine->ReadRegister(5), machine->ReadRegister(6) );
 		}
 		else if( type == SC_Close )
 		{
 			DEBUG( 's', "Close, initiated by user program.\n" );
-			// Close_Syscall_Func( machine->ReadRegister(4) );
+			Close_Syscall_Func( machine->ReadRegister(4) );
 		}
 		else if( type == SC_Exit )
 		{
@@ -228,16 +175,12 @@ ExceptionHandler(ExceptionType which)
 			DEBUG( 's', "Join, initiated by user program.\n" );
 			// Join_Syscall_Func( machine-ReadRegister(4) );
 		}
-		else if( type == SC_Yield )
-		{
-			DEBUG( 's', "Yield, initiated by user program.\n" );
-			// Yield_Syscall_Func( machine-ReadRegister(4) );
-		}
 		else 
 		{
 			printf( "Unexpected user mode exception %d %d.\n", which, type );
 			ASSERT(FALSE);
 		}
+		
 		/* clean up procedure */
 		machine->WriteRegister( 2, sys_ret ); // write the return code, if 0 still not
 											//important since the caller wont care anyway

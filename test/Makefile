@@ -18,7 +18,7 @@
 # UCSD uAPE (Sparc/Solaris)
 # GCCDIR = /home/solaris/ieng9/cs120f/public/mips-sparc.solaris-xgcc/
 #GCCDIR = $(CSE120_GCC)
-GCCDIR = /classes/cs4411/code/mips-x86.linux-xgcc/
+GCCDIR = /home/btcraig/classes/cs4411/nachos-projectB/mips/
 LDFLAGS = -T script -N
 ASFLAGS = -mips2
 CPPFLAGS = $(INCDIR)
@@ -52,6 +52,12 @@ halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	../bin/coff2noff halt.coff halt
 
+fileiotest_1.o: fileiotest_1.c	
+	$(CC) $(CFLAGS) -c fileiotest_1.c
+fileiotest_1: fileIO1.o start.o
+	$(LD) $(LDFLAGS) start.o fileiotest_1.o -o fileiotest.coff
+	../bin/coff2noff fileiotest_1.coff fileiotest_1
+	
 shell.o: shell.c
 	$(CC) $(CFLAGS) -c shell.c
 shell: shell.o start.o
