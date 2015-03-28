@@ -18,7 +18,7 @@
 # UCSD uAPE (Sparc/Solaris)
 # GCCDIR = /home/solaris/ieng9/cs120f/public/mips-sparc.solaris-xgcc/
 #GCCDIR = $(CSE120_GCC)
-GCCDIR = /home/btcraig/classes/cs4411/nachos-projectB/mips/
+GCCDIR = /home/btcraig/classes/cs4411/nachos-projectB/mips-x86.linux-xgcc/
 LDFLAGS = -T script -N
 ASFLAGS = -mips2
 CPPFLAGS = $(INCDIR)
@@ -31,15 +31,15 @@ CPPFLAGS = $(INCDIR)
 
 PATH = $(GCCDIR):/lib:/usr/bin:/bin
 
-CC = $(GCCDIR)gcc
+CC = $(GCCDIR)mips-gcc
 AS = $(GCCDIR)as
-LD = $(GCCDIR)ld
+LD = $(GCCDIR)mips-ld
 
 CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort
+all: halt shell matmult sort fileio
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -52,11 +52,11 @@ halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	../bin/coff2noff halt.coff halt
 
-fileiotest_1.o: fileiotest_1.c	
-	$(CC) $(CFLAGS) -c fileiotest_1.c
-fileiotest_1: fileIO1.o start.o
-	$(LD) $(LDFLAGS) start.o fileiotest_1.o -o fileiotest.coff
-	../bin/coff2noff fileiotest_1.coff fileiotest_1
+fileio.o: fileio.c	
+	$(CC) $(CFLAGS) -c fileio.c
+fileio: fileio.o start.o
+	$(LD) $(LDFLAGS) start.o fileio.o -o fileio.coff
+	../bin/coff2noff fileio.coff fileio
 	
 shell.o: shell.c
 	$(CC) $(CFLAGS) -c shell.c

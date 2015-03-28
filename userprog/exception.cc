@@ -183,7 +183,7 @@ ExceptionHandler(ExceptionType which)
 		
 		/* clean up procedure */
 		machine->WriteRegister( 2, sys_ret ); // write the return code, if 0 still not
-											//important since the caller wont care anyway
+											// important since the caller wont care anyway
 		/* increment the PC now */
 		machine->WriteRegister( PrevPCReg, machine->ReadRegister( PCReg ) );
 		machine->WriteRegister( PCReg, machine->ReadRegister( NextPCReg ) );

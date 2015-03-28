@@ -9,6 +9,7 @@ Create_Syscall_Func( unsigned int addr, int size )
 {	
 	char *buf = new char[ size + 1 ]; // strlen (size) + \0
 	/* error  check */
+	if( size < 0 ) return;
 	if( buf == NULL ) { printf("Failed to alloc buffer in create_syscall\n."); }
 	buf = currentThread->space->read( addr, size );
 	
@@ -43,6 +44,7 @@ Open_Syscall_Func( unsigned int addr, int size )
 	int fd;
 	
 	/* error  check */
+	if( size < 0 ) return -1;
 	if( buf == NULL ) { printf("Failed to alloc buffer in open_syscall\n."); }
 	buf = currentThread->space->read( addr, size );
 	
@@ -51,7 +53,6 @@ Open_Syscall_Func( unsigned int addr, int size )
 	
 	/* tell the FS to open it up */
 	file = fileSystem->Open( buf );
-	
 	
 	if( file )
 	{
@@ -93,6 +94,7 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
 	}
 	
 	/* error check */
+	if( size < 0 ) return -1;
 	if( buf == NULL )
 	{
 		printf( "Failed to alloc buffer in write_syscall\n."); 
@@ -148,6 +150,7 @@ Read_Syscall_Func( unsigned int virt_addr, int size, int fd )
 	buf = new char[ size ];
 	
 	/* checking errors */
+	if( size < 0 ) return -1;
 	if( fd == ConsoleOutput )
 	{
 		printf( "You cannot read from stdout!\n" );
