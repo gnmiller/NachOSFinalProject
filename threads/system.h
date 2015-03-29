@@ -36,7 +36,7 @@ extern Machine* machine;	// user program memory and registers
 
 #include "addrspace.h"
 #include "synch.h"
-/* struct to hold information relevant to an executing process that the OS may need to know
+/* struct to hold information relevant to an executing process that the OS may need to know */
 typedef struct
 {
 	AddrSpace *myspace;
@@ -50,7 +50,7 @@ extern proc_table_t process_table[2048]; // hold some info on processes in the O
 extern int total_process; // global OS counter
 extern Lock *proc_table_lock; // lock for proc table
 extern int active_process;
-*/
+
 #endif
 
 #ifdef FILESYS_NEEDED 		// FILESYS or FILESYS_STUB 

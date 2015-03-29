@@ -48,62 +48,8 @@
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
-
-/**
- * Translate a virtual addr to physical and read size bytes
- * into buf from the address specified
- * 
- * return -1 on an error
- */
-int
-readVMem( unsigned int virt_addr, int size, char *buf )
-{
-	bool res;
-	int readB = 0; // bytes we read
-	int *phys_addr = new int; // physical address
-	
-	while( readB >= 0 && readB < size )
-	{
-		/* read the data from mem */
-		res = machine->ReadMem( virt_addr, 1, phys_addr );
-		/* store it to the buffer */
-		buf[readB++] = *phys_addr;		
-		if( res != 0 ) return -1;
-		
-		/* increment to next byte */
-		virt_addr++;
-	}
-	
-	delete phys_addr;
-	return readB;
-}
-
-/**
- * Translate a virtual addr to physical and write size bytes
- * from buf into the address specified
- * 
- * return -1 on an error
- */
-int
-writeVMem( unsigned int virt_addr, int size, char *buf )
-{
-	bool res;
-	int writeB = 0;
-	
-	while( writeB >= 0 && writeB < size )
-	{
-		res = machine->WriteMem( virt_addr, 1, (int)( buf[ writeB++ ] ) );
-		if( res != 0 ) return -1;
-		
-		/* increment */
-		virt_addr++;
-	}
-	
-	return writeB;
-}
 	
 #include "fileIO.syscall"
-//#include "proc.syscall"
 
 /**
  * Create a process in SC_Exec
@@ -119,7 +65,7 @@ void createProcess(int arg)
  * Execute a file
 **/
 int 
-Exec_Syscall_Func()
+Exec_Syscall_Func( )
 {
 	char *fileName = currentThread->space->read(machine->ReadRegister(4), 0); //get exe name from register 4
 	
@@ -129,7 +75,9 @@ Exec_Syscall_Func()
 	SpaceId sid = -1;
 	try
 	{
-		thread->space = new AddrSpace(fileName);
+		OpenFile *binary;
+		binary = fileSystem->Open( fileName );
+		thread->space = new AddrSpace( binary );
 		
 		if(args != 0)
 			thread->space->createStackArgs(args, fileName);
@@ -146,6 +94,7 @@ Exec_Syscall_Func()
 		return -1;
 	}
 	
+	/*
 	machine->WriteRegister(2, (int)sid);
 	int pc = machine->ReadRegister(PCReg);
 	machine->WriteRegister(PrevPCReg, pc);
@@ -153,9 +102,9 @@ Exec_Syscall_Func()
 	machine->WriteRegister(PCReg, pc);
 	pc += 4;
 	machine->WriteRegister(NextPCReg, pc);
+	*/
 	
-	return 0;
-	
+	return sid;	
 }
 
 /**
@@ -202,6 +151,7 @@ Join_Syscall_Func()
 void
 ExceptionHandler(ExceptionType which)
 {
+	DEBUG( 's', "SYSCALL: %d\n", which );
     int type = machine->ReadRegister(2);
 	int sys_ret = 0; // store return if one is expected
 				// will get written to r2 at the end of business
@@ -238,7 +188,7 @@ ExceptionHandler(ExceptionType which)
 		else if( type == SC_Close )
 		{
 			DEBUG( 's', "Close, initiated by user program.\n" );
-			// Close_Syscall_Func( machine->ReadRegister(4) );
+			Close_Syscall_Func( machine->ReadRegister(4) );
 		}
 		else if( type == SC_Exit )
 		{
@@ -246,25 +196,15 @@ ExceptionHandler(ExceptionType which)
 			printf("Exiting in SC_EXIT\n");
 			Exit_Syscall_Func();
 		}
-		else if( type == SC_Fork )
-		{
-			DEBUG( 's', "Fork, initiated by user program.\n" );
-			// Fork_Syscall_Func( machine->ReadRegister(4) );
-		}
 		else if( type == SC_Exec )
 		{
 			DEBUG( 's', "Exec, initiated by user program.\n" );
-			sys_ret = Exec_Syscall_Func();
+			sys_ret = Exec_Syscall_Func( );
 		}
 		else if( type == SC_Join )
 		{
 			DEBUG( 's', "Join, initiated by user program.\n" );
 			Join_Syscall_Func();
-		}
-		else if( type == SC_Yield )
-		{
-			DEBUG( 's', "Yield, initiated by user program.\n" );
-			// Yield_Syscall_Func( machine-ReadRegister(4) );
 		}
 		else 
 		{
@@ -299,7 +239,7 @@ ExceptionHandler(ExceptionType which)
 	}
 	else if ( which != SyscallException )
 	{
-		printf( "Unsupported exception type!\n" );
+		//printf( "Unsupported exception type: %d!\n", which );
 		return;
 	}
 }
