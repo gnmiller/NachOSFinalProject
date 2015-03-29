@@ -1,4 +1,4 @@
-        .text
+       .text
         .align 2
         .globl ThreadRoot
 ThreadRoot:
