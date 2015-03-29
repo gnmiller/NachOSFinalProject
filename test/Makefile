@@ -39,7 +39,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort fork kid
+all: halt shell matmult sort fork kid fileio test
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -81,3 +81,15 @@ kid.o: kid.c
 kid: kid.o start.o
 	$(LD) $(LDFLAGS) start.o kid.o -o kid.coff
 	../bin/coff2noff kid.coff kid
+
+fileio.o: fileio.c
+	$(CC) $(CFLAGS) -c fileio.c
+fileio: fileio.o start.o
+	$(LD) $(LDFLAGS) start.o fileio.o -o fileio.coff
+	../bin/coff2noff fileio.coff fileio
+
+test.o: test.c
+	$(CC) $(CFLAGS) -c test.c
+test: test.o start.o
+	$(LD) $(LDFLAGS) start.o test.o -o test.coff
+	../bin/coff2noff test.coff test
