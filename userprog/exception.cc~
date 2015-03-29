@@ -122,14 +122,15 @@ int
 Exec_Syscall_Func()
 {
 	char *fileName = currentThread->space->read(machine->ReadRegister(4), 0); //get exe name from register 4
+	
 	int args = machine->ReadRegister(5);//get argument from register 5
 	Thread* thread = new Thread("user", currentThread);
 	DEBUG('t', "\nExe File Name: %s\n", fileName);
 	SpaceId sid = -1;
-	
 	try
 	{
-		thread->space = new AddrSpace(fileName);
+		thread->space = new AddrSpace(fileName);//SEG FAULT!!!!
+		
 		if(args != 0)
 			thread->space->createStackArgs(args, fileName);
 		sid = thread->getID();
@@ -140,9 +141,11 @@ Exec_Syscall_Func()
 	catch (int e)
 	{
 		DEBUG('t', "Failed to create address space for EXE %s\n", fileName);
+		printf("Failed to create address space for EXE %s\n", fileName);
 		delete thread;
 		return -1;
 	}
+	
 	machine->WriteRegister(2, (int)sid);
 	int pc = machine->ReadRegister(PCReg);
 	machine->WriteRegister(PrevPCReg, pc);
@@ -164,6 +167,36 @@ Exit_Syscall_Func()
 	int status = machine->ReadRegister(4);
 	currentThread->notifyParent(status);
 	currentThread->Finish();
+}
+
+/**
+ * Join the childprintf("fuckerEXEC\n");
+**/
+void 
+Join_Syscall_Func()
+{
+	int cid = machine->ReadRegister(4);//child thread id
+	machine->WriteRegister(2, -1);
+	if(cid >=0 && currentThread->child != NULL)
+	{
+		ChildThread* childRecord = currentThread->child;
+		do
+		{
+			if(childRecord->id == cid)//find this child
+			{
+				DEBUG('t', "Waiting on child thread %d\n", cid);
+				childRecord->join_sem->P();
+				machine->WriteRegister(2, childRecord->status);
+				break;
+			}
+			childRecord = childRecord->next;
+		} while(childRecord != currentThread->child);
+	}
+	int pc = machine->ReadRegister(PCReg);
+	machine->WriteRegister(PrevPCReg, pc);
+	pc = machine->ReadRegister(NextPCReg);
+	pc += 4;
+	machine->WriteRegister(NextPCReg, pc);
 }
 
 void
@@ -210,6 +243,7 @@ ExceptionHandler(ExceptionType which)
 		else if( type == SC_Exit )
 		{
 			DEBUG( 's', "Exit, initiated by user program.\n" );
+			printf("Exiting in SC_EXIT\n");
 			Exit_Syscall_Func();
 		}
 		else if( type == SC_Fork )
@@ -225,7 +259,7 @@ ExceptionHandler(ExceptionType which)
 		else if( type == SC_Join )
 		{
 			DEBUG( 's', "Join, initiated by user program.\n" );
-			// Join_Syscall_Func( machine-ReadRegister(4) );
+			Join_Syscall_Func();
 		}
 		else if( type == SC_Yield )
 		{

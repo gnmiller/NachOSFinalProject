@@ -409,6 +409,7 @@ int allocateSharedMemory(int key, int numbytes, int flag)
 }
 AddrSpace::AddrSpace(char* name)
 {
+	printf("name: %s\n", name);
 	OpenFile* executable = fileSystem->Open(name);//Why I cannot trace to Open
     if(executable == NULL)
     {		

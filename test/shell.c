@@ -12,6 +12,9 @@ main()
     prompt[0] = '-';
     prompt[1] = '-';
 
+	char *args[2];
+	args[0] = "Child";
+	args[1] = (char*)0;
     while( 1 )
     {
 	Write(prompt, 2, output);
@@ -27,7 +30,7 @@ main()
 	buffer[--i] = '\0';
 
 	if( i > 0 ) {
-		newProc = Exec(buffer);
+		newProc = Exec(buffer, args);
 		Join(newProc);
 	}
     }

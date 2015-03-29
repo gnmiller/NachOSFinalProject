@@ -90,9 +90,9 @@ Open_Syscall_Func( unsigned int addr, int size )
 int
 Write_Syscall_Func( unsigned int virt_addr, int size, int fd )
 {
-	char *buf;
+	char *buf = currentThread->space->read(virt_addr, size);
 	OpenFile *file;
-	buf = new char[size];
+	//buf = new char[size];
 	
 	/* stdin = error */
 	if( fd == ConsoleInput )
@@ -107,12 +107,12 @@ Write_Syscall_Func( unsigned int virt_addr, int size, int fd )
 		printf( "Failed to alloc buffer in write_syscall\n."); 
 		return -1;
 	}
-	if( readVMem( virt_addr, size, buf ) == -1 ) // read the data from mem
+	/*if( readVMem( virt_addr, size, buf ) == -1 ) // read the data from mem
 	{
 		printf( "Failed to read from memory in write_syscall\n" );
 		delete[] buf;
 		return -1;
-	}
+	}*/
 	
 	/* output to console .. 
 		NOTE: may need to be updated when/if SynchConsole is implemented */
@@ -123,7 +123,7 @@ Write_Syscall_Func( unsigned int virt_addr, int size, int fd )
 		{
 			printf("%c", buf[ count ] ); // write to stdout directly
 		}
-		delete[] buf;
+		//delete[] buf;
 		return count;
 	}
 	/* write to the file specified if not stdout */
@@ -134,13 +134,13 @@ Write_Syscall_Func( unsigned int virt_addr, int size, int fd )
 		if( file ) // not null, etc
 		{
 			int temp = file->Write( buf, size );			
-			delete[] buf;
+			//delete[] buf;
 			return temp;
 		}
 		else
 		{
 			printf( "Failed to write to file in write syscall (bad id).\n" );
-			delete[] buf;
+			//delete[] buf;
 			return -1;
 		}
 	}

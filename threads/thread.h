@@ -148,7 +148,7 @@ class Thread {
 
     int userRegisters[NumTotalRegs];	// user-level CPU register state
     
-    ChildThread* parentRecord; //list keeps the record of its children
+    ChildThread* parentRecord; //for this thread's parent keep
 
   public:
     void SaveUserState();		// save user-level register state
@@ -159,7 +159,7 @@ class Thread {
     void notifyParent(int status);
     int getID();
     
-    ChildThread* child;
+    ChildThread* child;//this thread's child
     int nextID;//next ID for its child
     int returnStatus;
 #endif

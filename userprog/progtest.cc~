@@ -43,7 +43,7 @@ StartProcess(char *filename)
 
     delete executable;			// close file
     
-    //interrupt->Schedule(RoundRobin, (int)currentThread, 20, TimerInt);
+    interrupt->Schedule(RoundRobin, (int)currentThread, 20, TimerInt);
     
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register
