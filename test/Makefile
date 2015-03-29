@@ -31,15 +31,15 @@ CPPFLAGS = $(INCDIR)
 
 PATH = $(GCCDIR):/lib:/usr/bin:/bin
 
-CC = $(GCCDIR)mips-gcc
+CC = $(GCCDIR)gcc
 AS = $(GCCDIR)as
-LD = $(GCCDIR)mips-ld
+LD = $(GCCDIR)ld
 
 CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort fork kid fileio
+all: halt shell matmult sort fork kid
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -52,12 +52,6 @@ halt: halt.o start.o
 	$(LD) $(LDFLAGS) start.o halt.o -o halt.coff
 	../bin/coff2noff halt.coff halt
 
-fileio.o: fileio.c	
-	$(CC) $(CFLAGS) -c fileio.c
-fileio: fileio.o start.o
-	$(LD) $(LDFLAGS) start.o fileio.o -o fileio.coff
-	../bin/coff2noff fileio.coff fileio
-	
 shell.o: shell.c
 	$(CC) $(CFLAGS) -c shell.c
 shell: shell.o start.o

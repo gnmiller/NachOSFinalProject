@@ -48,7 +48,7 @@
 //	"which" is the kind of exception.  The list of possible exceptions 
 //	are in machine.h.
 //----------------------------------------------------------------------
-
+	
 #include "fileIO.syscall"
 
 /**
@@ -177,13 +177,13 @@ ExceptionHandler(ExceptionType which)
 		{
 			DEBUG( 's', "Write, initiated by user program.\n" );
 			sys_ret = Write_Syscall_Func( machine->ReadRegister(4),
-				machine->ReadRegister(5), machine->ReadRegister(6) );
+										  machine->ReadRegister(5), machine->ReadRegister(6) );
 		}
 		else if( type == SC_Read )
 		{
 			DEBUG( 's', "Read, initiated by user program.\n" );
 			sys_ret = Read_Syscall_Func( machine->ReadRegister(4),
-				machine->ReadRegister(5), machine->ReadRegister(6) );
+										  machine->ReadRegister(5), machine->ReadRegister(6) );
 		}
 		else if( type == SC_Close )
 		{
@@ -211,10 +211,9 @@ ExceptionHandler(ExceptionType which)
 			printf( "Unexpected user mode exception %d %d.\n", which, type );
 			ASSERT(FALSE);
 		}
-		
 		/* clean up procedure */
 		machine->WriteRegister( 2, sys_ret ); // write the return code, if 0 still not
-											// important since the caller wont care anyway
+											//important since the caller wont care anyway
 		/* increment the PC now */
 		machine->WriteRegister( PrevPCReg, machine->ReadRegister( PCReg ) );
 		machine->WriteRegister( PCReg, machine->ReadRegister( NextPCReg ) );
