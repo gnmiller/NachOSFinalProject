@@ -150,11 +150,11 @@ Initialize(int argc, char **argv)
     
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
-	/* added stuff for userprog */
+	/* added stuff for userprog 
 	process_table[2048] = {0};
 	Lock *process_table_lock = new Lock("proc table lock");
 	total_process = active_process = 1;
-	
+*/	
 #endif
 
 #ifdef FILESYS
