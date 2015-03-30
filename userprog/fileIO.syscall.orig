@@ -7,8 +7,11 @@
 void
 Create_Syscall_Func( unsigned int addr, int size )
 {	
-	char *buf = currentThread->space->read( addr, size );
+	char *buf = new char[ size + 1 ]; // strlen (size) + \0
+	/* error  check */
+	if( size < 0 ) return;
 	if( buf == NULL ) { printf("Failed to alloc buffer in create_syscall\n."); }
+	buf = currentThread->space->read( addr, size );
 	
 	/* null byte.. */
 	buf[ size ] = '\0';
@@ -16,7 +19,8 @@ Create_Syscall_Func( unsigned int addr, int size )
 	/* tell the FS to make the file */
 	fileSystem->Create( buf, 0 );
 	DEBUG( 's', "Created file: %s requested by userprog\n" );
-
+	
+	delete[] buf;
 	return;
 } // create_syscall_func
 
@@ -35,20 +39,20 @@ Create_Syscall_Func( unsigned int addr, int size )
 int
 Open_Syscall_Func( unsigned int addr, int size )
 {
+	char *buf = new char[ size + 1 ];
 	OpenFile *file;
 	int fd;
 	
 	/* error  check */
-	char *buf = currentThread->space->read( addr, size );
+	if( size < 0 ) return -1;
 	if( buf == NULL ) { printf("Failed to alloc buffer in open_syscall\n."); }
+	buf = currentThread->space->read( addr, size );
 	
-	
-	 /* null byte.. */
+	/* null byte.. */
 	buf[ size ] = '\0';
 	
 	/* tell the FS to open it up */
 	file = fileSystem->Open( buf );
-	
 	
 	if( file )
 	{
@@ -56,10 +60,12 @@ Open_Syscall_Func( unsigned int addr, int size )
 		if( ( fd = currentThread->space->open_files.fd_put( file )) == -1 )
 			delete file;
 		DEBUG( 's', "Opened file: %s requested by userprog\n" );
+		delete[] buf;
 		return fd;
 	}
 	else
 	{
+		delete[] buf;
 		return -1;
 	}
 	
@@ -76,8 +82,9 @@ Open_Syscall_Func( unsigned int addr, int size )
 int
 Write_Syscall_Func( unsigned int addr, int size, int fd )
 {
-	
+	char *buf = currentThread->space->read(virt_addr, size);
 	OpenFile *file;
+	//buf = new char[size];
 	
 	/* stdin = error */
 	if( fd == ConsoleInput )
@@ -86,13 +93,23 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
 		return -1;
 	}
 	
-	/* error  check */
-	char *buf = currentThread->space->read( addr, size );
+	/* error check */
+	if( size < 0 ) return -1;
 	if( buf == NULL )
 	{
 		printf( "Failed to alloc buffer in write_syscall\n."); 
 		return -1;
 	}
+<<<<<<< HEAD
+	/*if( readVMem( virt_addr, size, buf ) == -1 ) // read the data from mem
+	{
+		printf( "Failed to read from memory in write_syscall\n" );
+		delete[] buf;
+		return -1;
+	}*/
+=======
+	buf = currentThread->space->read( addr, size );
+>>>>>>> userprog-test
 	
 	/* output to console .. 
 		NOTE: may need to be updated when/if SynchConsole is implemented */
@@ -103,6 +120,7 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
 		{
 			printf("%c", buf[ count ] ); // write to stdout directly
 		}
+		//delete[] buf;
 		return count;
 	}
 	/* write to the file specified if not stdout */
@@ -112,12 +130,19 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
 		file = (OpenFile*) currentThread->space->open_files.fd_get( fd );
 		if( file ) // not null, etc
 		{
+<<<<<<< HEAD
 			int temp = file->Write( buf, size );			
+			//delete[] buf;
+=======
+			int temp = file->Write( buf, size ); // write to file
+			delete[] buf;
+>>>>>>> userprog-test
 			return temp;
 		}
 		else
 		{
 			printf( "Failed to write to file in write syscall (bad id).\n" );
+			//delete[] buf;
 			return -1;
 		}
 	}
@@ -132,14 +157,14 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
  * Return -1 on error and the bytes read on success.
  */
 int
-Read_Syscall_Func( unsigned int addr, int size, int fd )
+Read_Syscall_Func( unsigned int virt_addr, int size, int fd )
 {
 	char *buf;
 	OpenFile *file;
-	int res = 0;
 	buf = new char[ size ];
 	
 	/* checking errors */
+	if( size < 0 ) return -1;
 	if( fd == ConsoleOutput )
 	{
 		printf( "You cannot read from stdout!\n" );
@@ -157,7 +182,8 @@ Read_Syscall_Func( unsigned int addr, int size, int fd )
 		scanf( "%s", buf );
 		
 		/* copy into memory for user */
-		currentThread->space->write( addr, buf, size );
+		currentThread->space->write( virt_addr, buf, size );
+
 		/* we could have written less than size ... */
 		int str_len = strlen( buf );
 		delete[] buf;
@@ -166,13 +192,14 @@ Read_Syscall_Func( unsigned int addr, int size, int fd )
 	/* read from file */
 	else
 	{
+		/* check if the file exists and is open by this thread */
 		file = (OpenFile *) currentThread->space->open_files.fd_get( fd );
 		if( file )
 		{
 			int read_size = file->Read( buf, size );
 			if( read_size > 0 )
 			{
-				currentThread->space->write( addr, buf, size );
+				currentThread->space->write( virt_addr, buf, size );
 				delete[] buf;
 				return read_size;
 			}
@@ -202,8 +229,7 @@ Read_Syscall_Func( unsigned int addr, int size, int fd )
 void
 Close_Syscall_Func( int fd )
 {
-	OpenFile *file = (OpenFile *)NULL;
-	file = (OpenFile *)currentThread->space->open_files.fd_remove( fd );
+	OpenFile *file = (OpenFile *)currentThread->space->open_files.fd_remove( fd );
 	
 	if( file )
 	{
