@@ -10,7 +10,7 @@ int
 main()
 {
 
-  SpaceId kid;
+  SpaceId kid = 0;
   int joinval;
   char *args[2];
 
@@ -18,6 +18,7 @@ main()
   args[0] = "kid";
   args[1] = (char *)0;  
   kid = Exec("./test/kid", args);
+  //kid = Exec("./test/kid");
   prints("PARENT after exec; kid pid is ", ConsoleOutput);
   printd((int)kid, ConsoleOutput);
   prints("\n", ConsoleOutput);

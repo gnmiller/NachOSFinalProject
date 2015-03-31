@@ -51,6 +51,8 @@
 	
 #include "fileIO.syscall"
 
+
+
 /**
  * Create a process in SC_Exec
 **/
@@ -79,8 +81,8 @@ Exec_Syscall_Func( )
 		binary = fileSystem->Open( fileName );
 		thread->space = new AddrSpace( binary );
 		
-		if(args != 0)
-			thread->space->createStackArgs(args, fileName);
+		//if(args != 0)
+		//	thread->space->createStackArgs(args, fileName);
 		sid = thread->getID();
 		thread->Fork(&createProcess, 0);
 		
@@ -141,11 +143,13 @@ Join_Syscall_Func()
 			childRecord = childRecord->next;
 		} while(childRecord != currentThread->child);
 	}
+	/*
 	int pc = machine->ReadRegister(PCReg);
 	machine->WriteRegister(PrevPCReg, pc);
 	pc = machine->ReadRegister(NextPCReg);
 	pc += 4;
 	machine->WriteRegister(NextPCReg, pc);
+	*/
 }
 
 void

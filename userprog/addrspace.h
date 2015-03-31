@@ -22,6 +22,8 @@
 #define SHM_CREATE 0
 #define SHM_USE 1
 #define UserStackSize		1024 	// increase this as necessary!
+void* attachSharedMemory(int key);
+int allocateSharedMemory(int key, int numbytes, int flag);
 
 class AddrSpace {
   public:

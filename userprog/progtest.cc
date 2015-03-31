@@ -31,7 +31,7 @@ static void RoundRobin(int arg)
 void
 StartProcess(char *filename)
 {
-    OpenFile *executable = fileSystem->Open(filename);
+    /*OpenFile *executable = fileSystem->Open(filename);
     AddrSpace *space;
 
     if (executable == NULL) {
@@ -41,12 +41,20 @@ StartProcess(char *filename)
     space = new AddrSpace(executable);    
     currentThread->space = space;
 
-    delete executable;			// close file
+    delete executable;			// close file*/
+    try
+    {
+    	currentThread->space = new AddrSpace(filename);
+    }catch (int e)
+    {
+    	printf("Cannot start process: %s\n", filename);
+    	return;
+    }
     
-    //interrupt->Schedule(RoundRobin, (int)currentThread, 20, TimerInt);
+    interrupt->Schedule(RoundRobin, (int)currentThread, 20, TimerInt);
     
-    space->InitRegisters();		// set the initial register values
-    space->RestoreState();		// load page table register
+    currentThread->space->InitRegisters();		// set the initial register values
+    currentThread->space->RestoreState();		// load page table register
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
 					// the address space exits

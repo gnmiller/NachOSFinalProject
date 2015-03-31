@@ -409,7 +409,7 @@ int allocateSharedMemory(int key, int numbytes, int flag)
 }
 AddrSpace::AddrSpace(char* name)
 {
-	OpenFile* executable = fileSystem->Open(name);//Why I cannot trace to Open
+	OpenFile* executable = fileSystem->Open(name);
     if(executable == NULL)
     {		
     	printf("Unable to open file %s\n", name);
@@ -478,7 +478,6 @@ AddrSpace::AddrSpace(char* name)
         pageTable[virt_page].dirty = FALSE;
         pageTable[virt_page].readOnly = FALSE;
     }
-	
 }
 
 AddrSpace::AddrSpace(const AddrSpace& source)

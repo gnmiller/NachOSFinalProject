@@ -31,6 +31,7 @@ main()
 
 	if( i > 0 ) {
 		newProc = Exec(buffer, args);
+		//newProc = Exec(buffer);
 		Join(newProc);
 	}
     }
