@@ -73,6 +73,12 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
 	
 	OpenFile *file;
 	
+	/* invalid fd */
+	if( fd < 0 )
+	{
+		return -1;
+	}
+	
 	/* stdin = error */
 	if( fd == ConsoleInput )
 	{
