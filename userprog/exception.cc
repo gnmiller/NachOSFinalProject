@@ -77,12 +77,7 @@ Exec_Syscall_Func( )
 	SpaceId sid = -1;
 	try
 	{
-		OpenFile *binary;
-		binary = fileSystem->Open( fileName );
-		thread->space = new AddrSpace( binary );
-		
-		//if(args != 0)
-		//	thread->space->createStackArgs(args, fileName);
+		thread->space = new AddrSpace( fileName );
 		sid = thread->getID();
 		thread->Fork(&createProcess, 0);
 		
