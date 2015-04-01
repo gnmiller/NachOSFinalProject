@@ -162,7 +162,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
     //NumPhysPages defined in machine.h ( = 32)
-	printf("numPages: %d, NumPhysPages: %d\n", numPages, NumPhysPages);
+	//printf("numPages: %d, NumPhysPages: %d\n", numPages, NumPhysPages);
     ASSERT(numPages <= NumPhysPages);		// check we're not trying
 						// to run anything too big --
 						// at least until we have
@@ -299,114 +299,6 @@ bool isSharedPage(int page)
 }
 
 
-bool foundSharedMemKey(int key)
-{
-    std::vector<int>::iterator it;
-    for(it = sharedMemIds.begin(); it != sharedMemIds.end(); it++)
-    {
-        if(*it == key){
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void* attachSharedMemory(int key)
-{
-    if(foundSharedMemKey(key) == false){
-        return NULL;
-    }
-
-    AddrSpace *space = currentThread->space;
-    int additionalPages = sharedMemory[key].size();
-
-    int start = space->addMoreSpace(additionalPages);
-    void *addr = (void*) space->attachShMem(key, start);
-
-    if(attachedThreads.count(key) > 0)
-    {
-        attachedThreads[key] = attachedThreads[key] + 1;
-    }
-    else {
-        attachedThreads[key] = 1;
-    }
-
-    //now to find the address of the start of the shared memory space
-    return addr;
-}
-
-
-int allocateSharedMemory(int key, int numbytes, int flag)
-{
-    DEBUG('s', "in allocate shared memory\n");
-    bool found = foundSharedMemKey(key);
-
-    //error checks
-    if(found == true && flag != SHM_USE)
-    {
-        DEBUG('s', "tried to create memory with same key\n");
-        return -1;
-    }
-    else if(found == false && flag != SHM_CREATE)
-    {
-        DEBUG('s', "tried to create memory with same key\n");
-        return -1;
-    }
-
-
-    if(found == true && flag == SHM_USE)
-    {
-        DEBUG('s', "using key...\n");
-        return key;
-    }
-    else if(found == false && flag == SHM_CREATE)
-    {
-        DEBUG('s', "creating memory with new key\n");
-        sharedMemIds.push_back(key);
-       
-        //determine if we can allocate enough pages for this 
-        //shared memory space 
-        int numPagesNeeded;
-        if(numbytes % PageSize > 0)
-        {
-            numPagesNeeded = numbytes / PageSize + 1;
-        }
-        else
-        {
-            numPagesNeeded = numbytes / PageSize;
-        }
-        
-        DEBUG('s',"need %d pages\n",numPagesNeeded); 
-        int pagesFound = 0;
-        for(int i = 0; i < NumPhysPages; i++) {
-            if(available_pages[i] == 0) {
-                pagesFound ++;
-            }
-        }
-
-        if(pagesFound < numPagesNeeded)
-        {
-            DEBUG('s', "need more memory to allocate\n");
-            return -1;
-        }
-        else
-        {
-            DEBUG('s', "found memory to make shared space\n");
-            sharedMemory[key] = std::vector<int>(numPagesNeeded);
-
-            for(int i = 0; i < numPagesNeeded; i++)
-            {
-                if(available_pages[i] == 0) 
-                {
-                    sharedMemory[key].push_back(i);
-                }
-            }
-        }
-    }
-
-    return key;
-}
 AddrSpace::AddrSpace(char* name)
 {
 	OpenFile* executable = fileSystem->Open(name);
@@ -429,7 +321,7 @@ AddrSpace::AddrSpace(char* name)
     strcpy(filename, name); //copy including null terminator
 	
     //Read the executable header.
-    printf("name: %s\n", filename);
+    //printf("name: %s\n", filename);
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
     
     delete executable;

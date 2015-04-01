@@ -132,7 +132,8 @@ Scheduler::Run (Thread *nextThread)
     // in switch.s.  You may have to think
     // a bit to figure out what happens after this, both from the point
     // of view of the thread and from the perspective of the "outside world".
-
+	printf("---------In schduler->Run---------\n");
+	printf("oldThread: %s, currentThread: %s\n", oldThread->getName(), currentThread->getName());
     SWITCH(oldThread, nextThread);
     
     DEBUG('t', "Now in thread \"%s\"\n", currentThread->getName());
@@ -144,12 +145,13 @@ Scheduler::Run (Thread *nextThread)
     if (threadToBeDestroyed != NULL) {
         delete threadToBeDestroyed;
 	threadToBeDestroyed = NULL;
+	printf("End of Run\n");
     }
     
 #ifdef USER_PROGRAM
     if (currentThread->space != NULL) {		// if there is an address space
         currentThread->RestoreUserState();     // to restore, do it.
-	currentThread->space->RestoreState();
+		currentThread->space->RestoreState();
     }
 #endif
 }

@@ -116,7 +116,8 @@ void
 Exit_Syscall_Func()
 {
 	int status = machine->ReadRegister(4);
-	currentThread->notifyParent(status);
+	currentThread->notifyParent(status);//doesn't matter what the value of status is
+	//currentThread->Yield();
 	currentThread->Finish();
 }
 

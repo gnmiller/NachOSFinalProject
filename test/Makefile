@@ -39,7 +39,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort fork kid fileio test
+all: halt shell matmult sort fork kid fileio test deepfork kid4 kid5 bogus1 fromcons hellofile 
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -93,3 +93,40 @@ test.o: test.c
 test: test.o start.o
 	$(LD) $(LDFLAGS) start.o test.o -o test.coff
 	../bin/coff2noff test.coff test
+
+deepfork.o: deepfork.c
+	$(CC) $(CFLAGS) -c deepfork.c
+deepfork: deepfork.o start.o
+	$(LD) $(LDFLAGS) start.o deepfork.o -o deepfork.coff
+	../bin/coff2noff deepfork.coff deepfork
+	
+kid4.o: kid4.c
+	$(CC) $(CFLAGS) -c kid4.c
+kid4: kid4.o start.o
+	$(LD) $(LDFLAGS) start.o kid4.o -o kid4.coff
+	../bin/coff2noff kid4.coff kid4
+
+kid5.o: kid5.c
+	$(CC) $(CFLAGS) -c kid5.c
+kid5: kid5.o start.o
+	$(LD) $(LDFLAGS) start.o kid5.o -o kid5.coff
+	../bin/coff2noff kid5.coff kid5
+	
+bogus1.o: bogus1.c
+	$(CC) $(CFLAGS) -c bogus1.c
+bogus1: bogus1.o start.o
+	$(LD) $(LDFLAGS) start.o bogus1.o -o bogus1.coff
+	../bin/coff2noff bogus1.coff bogus1
+
+fromcons.o: fromcons.c
+	$(CC) $(CFLAGS) -c fromcons.c
+fromcons: fromcons.o start.o
+	$(LD) $(LDFLAGS) start.o fromcons.o -o fromcons.coff
+	../bin/coff2noff fromcons.coff fromcons
+	
+hellofile.o: hellofile.c
+	$(CC) $(CFLAGS) -c hellofile.c
+hellofile: hellofile.o start.o
+	$(LD) $(LDFLAGS) start.o hellofile.o -o hellofile.coff
+	../bin/coff2noff hellofile.coff hellofile
+

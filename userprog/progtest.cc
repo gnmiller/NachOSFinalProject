@@ -45,6 +45,7 @@ StartProcess(char *filename)
     try
     {
     	currentThread->space = new AddrSpace(filename);
+    	//printf("In start: currentThread: %s\n", currentThread->getName());
     }catch (int e)
     {
     	printf("Cannot start process: %s\n", filename);

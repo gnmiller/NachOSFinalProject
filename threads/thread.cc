@@ -69,13 +69,13 @@ Thread::Thread(char* debugName, int priority)
 Thread::~Thread()
 {
     DEBUG('t', "Deleting thread \"%s\"\n", name);
-
     ASSERT(this != currentThread);
     if (stack != NULL)
 	DeallocBoundedArray((char *) stack, StackSize * sizeof(int));
 	
 #ifdef USER_PROGRAM
-	delete space;
+	if(space != NULL)
+		delete space;
 	if(child == NULL)
 		return;
 	ChildThread* record = child;
@@ -219,8 +219,8 @@ Thread::Yield ()
     
     nextThread = scheduler->FindNextToRun();
     if (nextThread != NULL) {
-	scheduler->ReadyToRun(this);
-	scheduler->Run(nextThread);
+		scheduler->ReadyToRun(this);
+		scheduler->Run(nextThread);
     }
     (void) interrupt->SetLevel(oldLevel);
 }
@@ -257,7 +257,7 @@ Thread::Sleep ()
     status = BLOCKED;
     while ((nextThread = scheduler->FindNextToRun()) == NULL)
 	interrupt->Idle();	// no one to run, wait for an interrupt
-        
+    //printf("In sleep: nextThread: %s\n", nextThread->getName());    
     scheduler->Run(nextThread); // returns when we've been signalled
 }
 #ifdef CHANGED
