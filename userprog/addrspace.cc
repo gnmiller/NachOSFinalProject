@@ -314,6 +314,10 @@ AddrSpace::AddrSpace(char* name)
     victum_offset = 0;
     forked = FALSE;
 
+	// initialize the fd list to include stdin and stdout
+	open_files.fd_put( (void*)0 );
+	open_files.fd_put( (void*)0 );
+	
     //Save this so the address space can be constructed later.
     
     filename = new char[strlen(name)];

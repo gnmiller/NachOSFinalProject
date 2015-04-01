@@ -5,13 +5,10 @@
  * Returns 0 on success.
  */
 void
-Create_Syscall_Func( unsigned int addr, int size )
+Create_Syscall_Func( unsigned int addr )
 {	
 	char *buf = currentThread->space->read( addr, size );
 	if( buf == NULL ) { printf("Failed to alloc buffer in create_syscall\n."); }
-	
-	/* null byte.. */
-	buf[ size ] = '\0';
 	
 	/* tell the FS to make the file */
 	fileSystem->Create( buf, 0 );
@@ -33,7 +30,7 @@ Create_Syscall_Func( unsigned int addr, int size )
  * On an error -1 is returned.
  */
 int
-Open_Syscall_Func( unsigned int addr, int size )
+Open_Syscall_Func( unsigned int addr )
 {
 	OpenFile *file;
 	int fd;
@@ -42,9 +39,6 @@ Open_Syscall_Func( unsigned int addr, int size )
 	char *buf = currentThread->space->read( addr, size );
 	if( buf == NULL ) { printf("Failed to alloc buffer in open_syscall\n."); }
 	
-	
-	 /* null byte.. */
-	buf[ size ] = '\0';
 	
 	/* tell the FS to open it up */
 	file = fileSystem->Open( buf );

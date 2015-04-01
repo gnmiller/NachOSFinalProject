@@ -139,13 +139,7 @@ Join_Syscall_Func()
 			childRecord = childRecord->next;
 		} while(childRecord != currentThread->child);
 	}
-	/*
-	int pc = machine->ReadRegister(PCReg);
-	machine->WriteRegister(PrevPCReg, pc);
-	pc = machine->ReadRegister(NextPCReg);
-	pc += 4;
-	machine->WriteRegister(NextPCReg, pc);
-	*/
+	// remove update to PC here, ExceptionHandler should do this
 }
 
 void
