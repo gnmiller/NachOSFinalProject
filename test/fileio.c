@@ -33,17 +33,19 @@ int main()
 	buffer2[10] = '2'; buffer2[11] = '\0';
 
 	/* normal operation */
-	prints( "\nStandard procedure: Create, Open, Write, Read, Close\n", ConsoleOutput );
+	prints( "\n\nStandard procedure: Create, Open, Write, Close, Read, Close\n", ConsoleOutput );
 	
 	Create( "newFile" );
 	OpenFileId fd = Open( "newFile" );
 	Write( buffer, 32, fd );
+	Close( fd );
+	fd = Open( "newFile" );
 	read = Read( buffer1, 32, fd );
 	Close( fd );
 	Write( buffer, 32, ConsoleOutput );
 	
 	/* open a file that doesnt exist */
-	prints( "\nFile does not exist: Open, Write, Read\n", ConsoleOutput );
+	prints( "\n\nFile does not exist: Open, Write, Read\n", ConsoleOutput );
 	
 	OpenFileId nullfd = Open( "does.not.exist" );
 	Write( buffer, 32, nullfd );
@@ -52,7 +54,7 @@ int main()
 	Write( buffer, 32, ConsoleOutput );
 	
 	/* open a file already open */
-	prints( "\nFile is already open: Open, Open, Write/Read, Write/Read (each fd)\n", ConsoleOutput );
+	prints( "\n\nFile is already open: Open, Open, Write/Read, Write/Read (each fd)\n", ConsoleOutput );
 			   
 	Create( "alreadyOpen" );
 	OpenFileId alreadyOpen = Open( "alreadyOpen" );
@@ -71,14 +73,14 @@ int main()
 	
 	/* create an existing file */
 	Write( nl, 81, ConsoleOutput );
-	Write( "File already exists: Create, Create\n", 128, ConsoleOutput );
+	Write( "\n\nFile already exists: Create, Create\n", 128, ConsoleOutput );
 	
 	Create( "alreadyExists" );
 	Create( "alreadyExists" );
 	
 	/* open close open */
 	Write( nl, 81, ConsoleOutput );
-	Write( "Open, close, open on same file\n", 128, ConsoleOutput );
+	Write( "\n\nOpen, close, open on same file\n", 128, ConsoleOutput );
 	
 	Create( "oco_test" );
 	OpenFileId oco_test = Open( "oco_test" );
@@ -90,7 +92,7 @@ int main()
 	
 	/* close a file not opened */
 	Write( nl, 81, ConsoleOutput );
-	Write( "Close a file not opened", 128, ConsoleOutput );
+	Write( "\n\nClose a file not opened\n", 128, ConsoleOutput );
 	
 	OpenFileId notopen;
 	Close( notopen ); // uninitialized

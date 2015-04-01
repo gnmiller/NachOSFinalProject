@@ -37,7 +37,7 @@ Open_Syscall_Func( unsigned int addr )
 	
 	/* error  check */
 	char *buf = currentThread->space->read( addr, 0 );
-	if( buf == NULL ) { printf("Failed to alloc buffer in open_syscall\n."); }
+	if( buf == NULL ) { printf("Failed to alloc buffer in open_syscall\n"); }
 	
 	
 	/* tell the FS to open it up */
@@ -203,6 +203,12 @@ void
 Close_Syscall_Func( int fd )
 {
 	OpenFile *file = (OpenFile *)NULL;
+	
+	if( fd < 0 )
+	{
+		return;
+	}
+	
 	file = (OpenFile *)currentThread->space->open_files.fd_remove( fd );
 	
 	if( file )

@@ -8,8 +8,9 @@ prints(char *s, OpenFileId file)
   }
 }
 int main(){
-	Create( "testFile" );
-	OpenFileId fd = Open( "testFile" );
+	Create( "someFile" );
+	OpenFileId fd = Open( "someFile" );
 	Write( "this is a string!", 32, fd );
+	Close( fd );
 	Exit( 0 );
 }
