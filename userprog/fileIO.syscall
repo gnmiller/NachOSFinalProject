@@ -7,7 +7,7 @@
 void
 Create_Syscall_Func( unsigned int addr )
 {	
-	char *buf = currentThread->space->read( addr, size );
+	char *buf = currentThread->space->read( addr, 0 );
 	if( buf == NULL ) { printf("Failed to alloc buffer in create_syscall\n."); }
 	
 	/* tell the FS to make the file */
@@ -36,7 +36,7 @@ Open_Syscall_Func( unsigned int addr )
 	int fd;
 	
 	/* error  check */
-	char *buf = currentThread->space->read( addr, size );
+	char *buf = currentThread->space->read( addr, 0 );
 	if( buf == NULL ) { printf("Failed to alloc buffer in open_syscall\n."); }
 	
 	

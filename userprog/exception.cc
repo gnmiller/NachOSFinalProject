@@ -160,12 +160,12 @@ ExceptionHandler(ExceptionType which)
 		else if( type == SC_Create )
 		{
 			DEBUG( 's', "Create, initiated by user program.\n" );
-			Create_Syscall_Func( machine->ReadRegister(4), machine->ReadRegister(5) );
+			Create_Syscall_Func( machine->ReadRegister(4) );
 		}
 		else if( type == SC_Open )
 		{
 			DEBUG( 's', "Open, initiated by user program.\n" );
-			sys_ret = Open_Syscall_Func( machine->ReadRegister(4), machine->ReadRegister(5) );
+			sys_ret = Open_Syscall_Func( machine->ReadRegister(4) );
 		}
 		else if( type == SC_Write )
 		{
