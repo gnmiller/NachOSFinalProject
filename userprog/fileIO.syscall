@@ -49,6 +49,7 @@ Open_Syscall_Func( unsigned int addr )
 		/* put it on the threads table */
 		if( ( fd = currentThread->space->open_files.fd_put( file )) == -1 )
 			delete file;
+		if( fd == 0 ) return -1;
 		DEBUG( 's', "Opened file: %s requested by userprog\n" );
 		return fd;
 	}

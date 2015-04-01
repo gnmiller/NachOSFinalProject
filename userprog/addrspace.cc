@@ -64,9 +64,7 @@ FD_List::~FD_List()
 void* FD_List::fd_get( int i )
 {
 	/* test if the fd is in range and in the map */
-	if( i < 0 || i >= size ) return 0;
-	if( map.Test( i ) )
-		return list[ i ];
+	return (i >=0 && i < size && map.Test(i)) ? list[i] : 0;
 }
 
 /**
