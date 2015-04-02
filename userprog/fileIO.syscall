@@ -135,9 +135,12 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
 int
 Read_Syscall_Func( unsigned int addr, int size, int fd )
 {
+	/* error check */
+	if( size == 0 ) return 0;
+	if( size < 0 ) return -1;
+	
 	char *buf;
 	OpenFile *file;
-	int res = 0;
 	buf = new char[ size ];
 	
 	/* checking errors */
