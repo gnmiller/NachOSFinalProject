@@ -303,7 +303,7 @@ AddrSpace::AddrSpace(char* name)
     if(executable == NULL)
     {		
     	printf("Unable to open file %s\n", name);
-		return;
+		throw 1;
 	}
     int size = 0;
 	
@@ -344,6 +344,7 @@ AddrSpace::AddrSpace(char* name)
                                 // to leave room for the stack
 
     numPages = divRoundUp(size, PageSize);
+    ASSERT(numPages <= NumPhysPages);
     size = numPages * PageSize;
     stack_base = size - 16;
 

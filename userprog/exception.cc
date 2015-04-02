@@ -70,14 +70,16 @@ int
 Exec_Syscall_Func( )
 {
 	char *fileName = currentThread->space->read(machine->ReadRegister(4), 0); //get exe name from register 4
-	
 	int args = machine->ReadRegister(5);//get argument from register 5
+	printf("currentThread: %s\n", currentThread->getName());
 	Thread* thread = new Thread("user", currentThread);
 	DEBUG('t', "\nExe File Name: %s\n", fileName);
 	SpaceId sid = -1;
 	try
 	{
 		thread->space = new AddrSpace( fileName );
+		if(args != 0)
+			thread->space->createStackArgs(args, fileName);
 		sid = thread->getID();
 		thread->Fork(&createProcess, 0);
 		
@@ -132,7 +134,7 @@ Join_Syscall_Func()
 			if(childRecord->id == cid)//find this child
 			{
 				DEBUG('t', "Waiting on child thread %d\n", cid);
-				childRecord->join_sem->P();
+				childRecord->join_sem->P();//would be V() in destructor of child Thread
 				machine->WriteRegister(2, childRecord->status);
 				break;
 			}
@@ -187,7 +189,6 @@ ExceptionHandler(ExceptionType which)
 		else if( type == SC_Exit )
 		{
 			DEBUG( 's', "Exit, initiated by user program.\n" );
-			printf("Exiting in SC_EXIT\n");
 			Exit_Syscall_Func();
 		}
 		else if( type == SC_Exec )
@@ -231,9 +232,37 @@ ExceptionHandler(ExceptionType which)
             currentThread->Finish();
 		}
 	}
-	else if ( which != SyscallException )
+	else if (which == AddressErrorException)
 	{
-		//printf( "Unsupported exception type: %d!\n", which );
+		IntStatus i = interrupt->SetLevel(IntOff);
+		printf("Segmentation fault\n");
+		currentThread->notifyParent(-1);
+		currentThread->Finish();
+		//ASSERT(FALSE);
+		interrupt->SetLevel(i);
+		
+	}
+	else if(which == OverflowException)
+	{
+		IntStatus i = interrupt->SetLevel(IntOff);
+		printf("Overflow fault\n");
+		currentThread->notifyParent(-1);
+		currentThread->Finish();
+		//ASSERT(FALSE);
+		interrupt->SetLevel(i);
+	}
+	else if(which == ReadOnlyException)
+	{
+		int badAddr =  machine->ReadRegister(BadVAddrReg);
+		if(currentThread->space->allow_writes(badAddr/PageSize) == -1)
+		{
+			currentThread->notifyParent(-1);
+			currentThread->Finish();
+		}
+	}
+	else
+	{
+		printf( "Unsupported exception type: %d!\n", which );
 		return;
 	}
 }

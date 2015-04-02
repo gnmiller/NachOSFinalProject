@@ -22,7 +22,7 @@ main()
   printd((int)kid, ConsoleOutput);
   Write("\n", 1, ConsoleOutput);
 
-  Write("PARENT about to Join kid\n", 25, ConsoleOutput);
+  Write("PARENT is about to Join kid\n", 28, ConsoleOutput);
   joinval = Join(kid);
   Write("PARENT off Join with value of ", 30, ConsoleOutput);
   printd(joinval, ConsoleOutput);

@@ -86,8 +86,9 @@ Thread::~Thread()
 		delete record->prev;
 	}
 	child = NULL;
-	
-	if(parentRecord != NULL) //deal with its parent's record
+	//parentRecord has been handled in notifyParent
+	//Only when deleleting the parent, the parentRecord(this parent's child) would be deleted
+	/*if(parentRecord != NULL) //deal with its parent's record
 	{
 		ASSERT(parentRecord->thread == this);
 		if(returnStatus = -1)
@@ -95,7 +96,7 @@ Thread::~Thread()
 		parentRecord->thread = NULL; //parent record would not have this child anymore
 		parentRecord->status = returnStatus;
 		parentRecord->join_sem->V(); //if parent is waiting on a join(), release them;
-	}
+	}*/
 #endif
 }
 
