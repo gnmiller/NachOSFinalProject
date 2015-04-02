@@ -27,6 +27,7 @@
 #include <string.h>
 #include <libgen.h>
 #include <unistd.h>
+
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -60,7 +61,11 @@ void
 Create_Syscall_Func( unsigned int addr )
 {	
 	char *buf = currentThread->space->read( addr, 0 );
-	if( buf == NULL ) { printf("Failed to alloc buffer in create_syscall\n."); }
+	if( buf == NULL )
+	{ 
+		DEBUG( 'f', "Failed to alloc buffer in create_syscall\n." ); 
+		return;
+	}
 	
 	/* test if we can create the specified file */
 	char tmp[256];
@@ -68,13 +73,13 @@ Create_Syscall_Func( unsigned int addr )
 	dirname( tmp );
 	if( access( tmp, R_OK|W_OK ) != 0 ) // NachOS does not differentiate so we need to check both
 	{
-		printf( "Insufficient permissions to file: %s\n", buf );
+		DEBUG( 'f', "Insufficient permissions to file: %s\n", buf );
 		return;
 	}
 	
 	/* tell the FS to make the file */
 	fileSystem->Create( buf, 0 );
-	DEBUG( 's', "Created file: %s requested by userprog\n" );
+	DEBUG( 'f', "Created file: %s requested by userprog\n", buf );
 
 	return;
 } // create_syscall_func
@@ -99,7 +104,11 @@ Open_Syscall_Func( unsigned int addr )
 	
 	/* error  check */
 	char *buf = currentThread->space->read( addr, 0 );
-	if( buf == NULL ) { printf("Failed to alloc buffer in open_syscall\n"); }
+	if( buf == NULL )
+	{ 
+		DEBUG( 'f', "Failed to alloc buffer in open_syscall\n"); 
+		return -1;
+	}
 	
 	/* test if we can open the specific file */
 	char tmp[256];
@@ -107,7 +116,7 @@ Open_Syscall_Func( unsigned int addr )
 	dirname( tmp );
 	if( access( tmp, R_OK|W_OK ) != 0 ) // NachOS does not differentiate so we need to check both
 	{
-		printf( "Insufficient permissions to file: %s\n", buf );
+		DEBUG( 'f', "Insufficient permissions to file: %s\n", buf );
 		return -1;
 	}
 	
@@ -120,7 +129,7 @@ Open_Syscall_Func( unsigned int addr )
 		if( ( fd = currentThread->space->open_files.fd_put( file )) == -1 )
 			delete file;
 		if( fd == 0 ) return -1;
-		DEBUG( 's', "Opened file: %s requested by userprog\n" );
+		DEBUG( 'f', "Opened file: %s requested by userprog\n", buf );
 		return fd;
 	}
 	else
@@ -157,7 +166,7 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
 	/* stdin = error */
 	if( fd == ConsoleInput )
 	{
-		printf( "You cannot write to stdin!\n" );
+		DEBUG( 'f', "You cannot write to stdin!\n" );
 		return -1;
 	}
 	
@@ -165,7 +174,7 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
 	char *buf = currentThread->space->read( addr, size );
 	if( buf == NULL )
 	{
-		printf( "Failed to alloc buffer in write_syscall.\n"); 
+		DEBUG( 'f', "Failed to alloc buffer in write_syscall.\n"); 
 		return -1;
 	}
 	
@@ -192,7 +201,7 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
 		}
 		else
 		{
-			printf( "Failed to write to file in write syscall (bad id).\n" );
+			DEBUG( 'f', "Failed to write to file in write syscall (bad id).\n" );
 			return -1;
 		}
 	}
@@ -221,12 +230,12 @@ Read_Syscall_Func( unsigned int addr, int size, int fd )
 	/* checking errors */
 	if( fd == ConsoleOutput )
 	{
-		printf( "You cannot read from stdout!\n" );
+		DEBUG( 'f', "You cannot read from stdout!\n" );
 		return -1;
 	}
 	if( buf == NULL )
 	{
-		printf( "Error allocating buffer in read syscall.\n" );
+		DEBUG( 'f', "Error allocating buffer in read syscall.\n" );
 	}
 	
 	/* read from stdin..
@@ -258,14 +267,14 @@ Read_Syscall_Func( unsigned int addr, int size, int fd )
 			else if( read_size == 0 )
 			{
 				// NOTE: should be removed before production?
-				printf( "Did not read any data on read().\n" );
+				DEBUG( 'f', "Did not read any data on read().\n" );
 				delete[] buf;
 				return read_size;
 			}
 		}
 		else
 		{
-			printf( "Bad id, failed to read from file.\n" );
+			DEBUG( 'f', "Bad id, failed to read from file.\n" );
 			delete[] buf;
 			return -1;
 		}
@@ -296,7 +305,7 @@ Close_Syscall_Func( int fd )
 	}
 	else
 	{
-		printf( "Tried to close a file that has not been opened by the current process.\n" );
+		DEBUG( 'f', "Tried to close a file that has not been opened by the current process.\n" );
 	}
 } // close syscall
 
