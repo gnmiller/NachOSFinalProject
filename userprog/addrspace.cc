@@ -437,8 +437,9 @@ int AddrSpace::createStackArgs(int argv_addr, char* name)
 
         DEBUG('u', "String pushed onto stack at 0x%x\n", stack_base);
 
-        write(stack_base, arg_str, 0);
+        write(stack_base, arg_str, strlen(arg_str));
     }
+
 
     //Argument strings have been pushed onto the stack. Now push the argv
     //array.
@@ -454,7 +455,7 @@ int AddrSpace::createStackArgs(int argv_addr, char* name)
     //Null terminate the array.
     arg_ptr_str = 0;
     write(stack_base + argc * 4, (char*)&arg_ptr_str, 4);
-
+	
     argv = stack_base;
     stack_base -= 8;
 

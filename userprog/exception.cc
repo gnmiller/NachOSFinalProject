@@ -125,7 +125,7 @@ Open_Syscall_Func( unsigned int addr )
 	
 	if( file )
 	{
-		/* put it on the threads table */
+		/* put it on the threads fd list */
 		if( ( fd = currentThread->space->open_files.fd_put( file )) == -1 )
 			delete file;
 		if( fd == 0 ) return -1;
@@ -178,8 +178,7 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
 		return -1;
 	}
 	
-	/* output to console .. 
-		NOTE: may need to be updated when/if SynchConsole is implemented */
+	/* output to console */
 	if( fd == ConsoleOutput )
 	{
 		int count;
@@ -193,6 +192,7 @@ Write_Syscall_Func( unsigned int addr, int size, int fd )
 	else
 	{
 		/* check if we have the fd open */
+		file = 0;
 		file = (OpenFile*) currentThread->space->open_files.fd_get( fd );
 		if( file ) // not null, etc
 		{
@@ -238,8 +238,7 @@ Read_Syscall_Func( unsigned int addr, int size, int fd )
 		DEBUG( 'f', "Error allocating buffer in read syscall.\n" );
 	}
 	
-	/* read from stdin..
-		NOTE: may require modification when SynchConsole comes into play */
+	/* read from stdi */ 
 	if( fd == ConsoleInput )
 	{
 		scanf( "%s", buf );
@@ -266,7 +265,6 @@ Read_Syscall_Func( unsigned int addr, int size, int fd )
 			}
 			else if( read_size == 0 )
 			{
-				// NOTE: should be removed before production?
 				DEBUG( 'f', "Did not read any data on read().\n" );
 				delete[] buf;
 				return read_size;
@@ -350,16 +348,6 @@ Exec_Syscall_Func( )
 		return -1;
 	}
 	
-	/*
-	machine->WriteRegister(2, (int)sid);
-	int pc = machine->ReadRegister(PCReg);
-	machine->WriteRegister(PrevPCReg, pc);
-	pc = machine->ReadRegister(NextPCReg);
-	machine->WriteRegister(PCReg, pc);
-	pc += 4;
-	machine->WriteRegister(NextPCReg, pc);
-	*/
-	
 	return sid;	
 }
 
@@ -371,12 +359,11 @@ Exit_Syscall_Func()
 {
 	int status = machine->ReadRegister(4);
 	currentThread->notifyParent(status);//doesn't matter what the value of status is
-	//currentThread->Yield();
 	currentThread->Finish();
 }
 
 /**
- * Join the childprintf("fuckerEXEC\n");
+ * Join the child
  */
 void 
 Join_Syscall_Func()
