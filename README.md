@@ -99,7 +99,11 @@ The file IO system call test suite contains the following tests:
 		The expected output should be nothing.
 
 ## Process Management System Calls
-
+	* This test suite tests the execution for the Exec() and Join() calls.
+		The parent process Exec()s two children with arguements specified in args.
+		The parent then joins each child in turn. After which the parent is given
+		a bogus Id for a child and attempted to Join with it.
+		
 ## Dazzle
 	* Our implementation does not present any particularly "dazzling" features
 		beyond what was required.
