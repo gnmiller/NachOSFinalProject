@@ -110,5 +110,7 @@ The file IO system call test suite contains the following tests:
 	* One showing is that the system does detect if the user has access to a path
 		when opening files. This applies only to the UNIX FS however and prevents
 		the OS crashing when insufficient permissiosn are present.
-	
+	* we also believe our system is very robust and would be extremely difficult for
+		a user to crash. Malicious users may find exploits but the average user should
+		not be able to crash the system.
 
