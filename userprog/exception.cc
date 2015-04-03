@@ -326,13 +326,14 @@ Exec_Syscall_Func( )
 {
 	char *fileName = currentThread->space->read(machine->ReadRegister(4), 0); //get exe name from register 4
 	int args = machine->ReadRegister(5);//get argument from register 5
-	printf("currentThread: %s\n", currentThread->getName());
+	//printf("currentThread: %s\n", currentThread->getName());
 	Thread* thread = new Thread("user", currentThread);
 	DEBUG('t', "\nExe File Name: %s\n", fileName);
 	SpaceId sid = -1;
 	try
 	{
 		thread->space = new AddrSpace( fileName );
+		
 		if(args != 0)
 			thread->space->createStackArgs(args, fileName);
 		sid = thread->getID();
@@ -343,7 +344,6 @@ Exec_Syscall_Func( )
 	catch (int e)
 	{
 		DEBUG('t', "Failed to create address space for EXE %s\n", fileName);
-		printf("Failed to create address space for EXE %s\n", fileName);
 		delete thread;
 		return -1;
 	}
@@ -365,11 +365,10 @@ Exit_Syscall_Func()
 /**
  * Join the child
  */
-void 
+int 
 Join_Syscall_Func()
 {
 	int cid = machine->ReadRegister(4);//child thread id
-	machine->WriteRegister(2, -1);
 	if(cid >=0 && currentThread->child != NULL)
 	{
 		ChildThread* childRecord = currentThread->child;
@@ -379,13 +378,12 @@ Join_Syscall_Func()
 			{
 				DEBUG('t', "Waiting on child thread %d\n", cid);
 				childRecord->join_sem->P();//would be V() in destructor of child Thread
-				machine->WriteRegister(2, childRecord->status);
-				break;
+				return 0;
 			}
 			childRecord = childRecord->next;
 		} while(childRecord != currentThread->child);
 	}
-	// remove update to PC here, ExceptionHandler should do this
+	return -1;
 }
 
 void
@@ -443,7 +441,7 @@ ExceptionHandler(ExceptionType which)
 		else if( type == SC_Join )
 		{
 			DEBUG( 's', "Join, initiated by user program.\n" );
-			Join_Syscall_Func();
+			sys_ret = Join_Syscall_Func();
 		}
 		else 
 		{
@@ -495,14 +493,14 @@ ExceptionHandler(ExceptionType which)
 		//ASSERT(FALSE);
 		interrupt->SetLevel(i);
 	}
-	else if(which == ReadOnlyException)
+	else if(which == ReadOnlyException)//maybe implemented in project 5
 	{
-		int badAddr =  machine->ReadRegister(BadVAddrReg);
-		if(currentThread->space->allow_writes(badAddr/PageSize) == -1)
-		{
-			currentThread->notifyParent(-1);
-			currentThread->Finish();
-		}
+		IntStatus i = interrupt->SetLevel(IntOff);
+		printf("Readonly fault\n");
+		currentThread->notifyParent(-1);
+		currentThread->Finish();
+		//ASSERT(FALSE);
+		interrupt->SetLevel(i);
 	}
 	else
 	{

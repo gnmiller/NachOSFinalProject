@@ -360,6 +360,7 @@ Thread::RestoreUserState()
     for (int i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister(i, userRegisters[i]);
 }
+static int globalID = 0;
 
 Thread::Thread(char* threadName, Thread* parent)
 {
@@ -384,13 +385,15 @@ Thread::Thread(char* threadName, Thread* parent)
 	{
 		parentRecord = new ChildThread(this);
 		parent->child = parentRecord;
-		parent->child->id = parent->nextID++;
+		//parent->child->id = parent->nextID++;
+		parentRecord->id = globalID++;
 	}
 	else
 	{
 		ChildThread* firstChild = parent->child;
 		parentRecord = new ChildThread(this);
-		parentRecord->id = parent->nextID++;
+		//parentRecord->id = parent->nextID++;
+		parentRecord->id = globalID++;
 		
 		parentRecord->prev = firstChild->prev;
 		parentRecord->next = firstChild;

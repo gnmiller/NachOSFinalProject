@@ -13,6 +13,7 @@
 #include "console.h"
 #include "addrspace.h"
 #include "synch.h"
+#include "synchconsole.h"
 
 //----------------------------------------------------------------------
 // StartProcess
@@ -68,7 +69,7 @@ StartProcess(char *filename)
 static Console *console;
 static Semaphore *readAvail;
 static Semaphore *writeDone;
-
+static SynchConsole *synchConsole;
 //----------------------------------------------------------------------
 // ConsoleInterruptHandlers
 // 	Wake up the thread that requested the I/O.
@@ -100,3 +101,18 @@ ConsoleTest (char *in, char *out)
 	if (ch == 'q') return;  // if q, quit
     }
 }
+
+void SynchConsoleTest(char* in, char* out)
+{
+	char ch;
+	synchConsole = new SynchConsole();
+	for(;;)
+	{
+		ch = synchConsole->GetChar();
+		synchConsole->PutChar(ch);
+		if(ch == 'q')
+			return;
+	}
+	
+}
+
