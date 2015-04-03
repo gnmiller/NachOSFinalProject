@@ -67,16 +67,6 @@ Create_Syscall_Func( unsigned int addr )
 		return;
 	}
 	
-	/* test if we can create the specified file */
-	char tmp[256];
-	strcpy( tmp, buf );
-	dirname( tmp );
-	if( access( tmp, R_OK|W_OK ) != 0 ) // NachOS does not differentiate so we need to check both
-	{
-		DEBUG( 'f', "Insufficient permissions to file: %s\n", buf );
-		return;
-	}
-	
 	/* tell the FS to make the file */
 	fileSystem->Create( buf, 0 );
 	DEBUG( 'f', "Created file: %s requested by userprog\n", buf );
@@ -111,13 +101,16 @@ Open_Syscall_Func( unsigned int addr )
 	}
 	
 	/* test if we can open the specific file */
-	char tmp[256];
-	strcpy( tmp, buf );
-	dirname( tmp );
-	if( access( tmp, R_OK|W_OK ) != 0 ) // NachOS does not differentiate so we need to check both
+	if( strstr( buf, "/" ) != NULL )
 	{
-		DEBUG( 'f', "Insufficient permissions to file: %s\n", buf );
-		return -1;
+		char tmp[256];
+		strcpy( tmp, buf );
+		dirname( tmp );
+		if( access( tmp, R_OK|W_OK ) != 0 ) // NachOS does not differentiate so we need to check both
+		{
+			DEBUG( 'f', "Insufficient permissions to file: %s\n", buf );
+			return -1;
+		}
 	}
 	
 	/* tell the FS to open it up */
