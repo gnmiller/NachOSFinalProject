@@ -268,33 +268,13 @@ void AddrSpace::RestoreState()
     machine->pageTableSize = numPages;
 }
 
-///////////added by Can Li///////////////////////
+///////////Added///////////////////////
 static int available_pages[NumPhysPages] = {0};
 static BitMap available_sectors(NumSectors);
 
-static std::vector<int> sharedMemIds;
-static std::map<int, std::vector<int> > sharedMemory;
-static std::map<int, int> attachedThreads;
 #ifdef FILESYS_NEEDED
 #include "synchdisk.h"
 #endif
-bool isSharedPage(int page)
-{
-    std::map<int, std::vector<int> >::iterator it;
-    for(it = sharedMemory.begin(); it != sharedMemory.end(); it++)
-    {
-        std::vector<int>::iterator it2;
-        for(it2 = it->second.begin(); it2 != it->second.end(); it2++)
-        {
-            int pageAdd = *it2;
-            if(page == pageAdd){
-                return true;
-            }
-        } 
-    } 
-
-    return false;
-}
 
 
 AddrSpace::AddrSpace(char* name)
@@ -416,7 +396,6 @@ int AddrSpace::createStackArgs(int argv_addr, char* name)
     //Read the pointers into argv
     for(int arg_num = 0; arg_num < 19; arg_num++, argc++) {
         int* arg_ptr = (int*)currentSpace->read(argv_addr + arg_num * 4, 4);
-
         curr_argv[arg_num] = *(arg_ptr);
 
         if(curr_argv[arg_num] == 0) {
@@ -429,7 +408,6 @@ int AddrSpace::createStackArgs(int argv_addr, char* name)
     for(int arg = 0; arg < argc - 1; arg++) {
         DEBUG('u', "Reading argv string from 0x%x\n", curr_argv[arg]);
         char* arg_str = currentSpace->read(curr_argv[arg], 0);
-
         DEBUG('u', "Read string '%s'\n", arg_str);
 
         stack_base -= strlen(arg_str) + 1;
@@ -563,10 +541,6 @@ int AddrSpace::load_page(int virt_page) {
     //If memory space is available, put the page in memory.
     DEBUG('s',"checking for space available\n");
     for(int i = 0; i < NumPhysPages; i++) {
-        if(isSharedPage(i)){
-            DEBUG('s',"is shared page, so dont add this\n");
-            continue;
-        }
         if(available_pages[i] == 0) {
             DEBUG('u', "Found free page %d\n", i);
             page->physicalPage = i;
@@ -688,117 +662,6 @@ int AddrSpace::load_page(int virt_page) {
     return page->physicalPage;
 }
 
-//Make a copy of a page, and unset the readOnly bit on the TranslationEntry
-//Return the physical page number of the new page, or -1 on error.
-int AddrSpace::allow_writes(int virt_page) {
-    TranslationEntry* page = &(pageTable[virt_page]);
-    int new_physical_page = -1;
-
-    if(virt_page >= numPages || virt_page < 0) {
-        DEBUG('u', "Segmentation fault in allow_writes on page no:%d\n",
-            virt_page);
-        return -1;
-    }
-
-    if(page->virtualPage == virt_page) {
-        DEBUG('u', "Error index into page table on virtual page %d\n",
-            virt_page);
-        return -1;
-    }
-
-    //If the page isn't read only, there is nothing to do.
-    if(!page->readOnly) {
-        return page->physicalPage;
-    }
-
-    //The page isn't shared (anymore), so remove the read-only flag.
-    if(available_pages[page->physicalPage] == 1) {
-        page->readOnly = FALSE;
-        return page->physicalPage;
-    }
-
-    //Search for a place to put a copy of the page.
-    for(int i = 0; i < NumPhysPages; i++) {
-        if(available_pages[i] == 0) {
-            new_physical_page = i;
-            available_pages[i] = 1;
-        }
-    }
-
-    //If no extra memory exists, try to store something. If impossible, yeild
-    //and try again later.
-    new_physical_page = store_page();
-
-    //Set the page to exclusively used.
-    available_pages[new_physical_page] = 1;
-
-    //Copy the old page to the new one.
-    memcpy(&(machine->mainMemory[new_physical_page * PageSize]),
-        &(machine->mainMemory[page->physicalPage * PageSize]),
-        PageSize);
-
-    available_pages[page->physicalPage]--;
-    page->physicalPage = new_physical_page;
-    page->readOnly = FALSE;
-
-    return page->physicalPage;
-}
-
-int AddrSpace::addMoreSpace(int additionalPages)
-{
-    TranslationEntry *biggerPageTable = new TranslationEntry[numPages + additionalPages];
-    
-    for(int i = 0; i < numPages; i++){
-        biggerPageTable[i] = pageTable[i];
-    }
-
-    pageTable = biggerPageTable;
-    //TODO possibly delete the old pagetable here
-
-    for (int i = numPages; i < numPages + additionalPages; i++) {
-        pageTable[i].virtualPage = i;
-        pageTable[i].physicalPage = -1;
-
-        pageTable[i].valid = FALSE;
-        pageTable[i].use = FALSE;
-        pageTable[i].dirty = FALSE;
-        pageTable[i].readOnly = FALSE;
-    }
-    
-    numPages += additionalPages;
-
-    return numPages - additionalPages;
-}
-
-int AddrSpace::attachShMem(int key, int start)
-{
-    std::vector<int>::iterator it;
-    for(it = sharedMemory[key].begin(); it != sharedMemory[key].end(); it++)
-    {
-        pageTable[start].physicalPage = *it;
-        pageTable[start].valid = TRUE;
-        pageTable[start].readOnly = FALSE;
-        available_pages[*it]++;
-        start++;
-    }
-    
-    
-    return pageTable[start].virtualPage * PageSize;
-}
-
-void AddrSpace::truncatePagesFrom(int page)
-{
-    TranslationEntry *table = new TranslationEntry[page];
-    for(int i = 0; i < page; i++)
-    {
-        table[i] = pageTable[i];
-    }
-
-    //TODO maybe delete bigger table
-    numPages = page;
-    pageTable = table;
-}
-
 int AddrSpace::try_store_page() {
     TranslationEntry* best_page = &(pageTable[victum_offset]);
     bool best_used = FALSE;
@@ -826,10 +689,6 @@ int AddrSpace::try_store_page() {
             } else {
                 unused_offset = (victum_offset + i) % numPages;
             }
-        }
-        
-        if(isSharedPage(best_page->physicalPage)){
-            continue;
         }
 
         //If the current best selection uses non-read-only shared memory,

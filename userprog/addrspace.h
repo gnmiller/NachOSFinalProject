@@ -51,14 +51,9 @@ class AddrSpace {
 	void write(int addr, char* str, int bytes);//write str to virtual address
 	
 	int load_page(int virt_page);//load virt_page into memory
-	int allow_writes(int virt_page);
 	
 	int readPage( int physicalPage, int virtualPage );//read from physicalPage
     int writePage( int physicalPage, int virtualPage );//write virtualPage to that physicalPage
-
-    int addMoreSpace(int additionalPages);
-    int attachShMem(int key, int start);
-    void truncatePagesFrom(int page);
     
     int store_page();
     int try_store_page();

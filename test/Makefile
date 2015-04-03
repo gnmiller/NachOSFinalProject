@@ -39,7 +39,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort test fork kid deepfork kid4 kid5 bogus1 fromcons hellofile argkid argtest
+all: halt shell matmult sort test fork kid deepfork kid4 kid5 bogus1 fromcons hellofile argkid argtest multiprog child1 child2
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -135,3 +135,21 @@ argtest.o: argtest.c
 argtest: argtest.o start.o
 	$(LD) $(LDFLAGS) start.o argtest.o -o argtest.coff
 	../bin/coff2noff argtest.coff argtest
+	
+multiprog.o: multiprog.c
+	$(CC) $(CFLAGS) -c multiprog.c
+multiprog: multiprog.o start.o
+	$(LD) $(LDFLAGS) start.o multiprog.o -o multiprog.coff
+	../bin/coff2noff multiprog.coff multiprog
+	
+child1.o: child1.c
+	$(CC) $(CFLAGS) -c child1.c
+child1: child1.o start.o
+	$(LD) $(LDFLAGS) start.o child1.o -o child1.coff
+	../bin/coff2noff child1.coff child1
+
+child2.o: child2.c
+	$(CC) $(CFLAGS) -c child2.c
+child2: child2.o start.o
+	$(LD) $(LDFLAGS) start.o child2.o -o child2.coff
+	../bin/coff2noff child2.coff child2
