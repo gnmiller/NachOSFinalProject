@@ -121,19 +121,5 @@ int main()
 	prints( buffer1, ConsoleOutput );	
 	// rwtest2 should also be empty as should buffer1
 	
-	/* insufficient permissions */
-	prints( "\n\nCreate/Open file without permissions\nNote: This test relies on no access to \"/\"\n", ConsoleOutput );
-	Create( "/no.permissions" );
-	Open( "/no.permissions" );
-	
-	/* read empty file */
-	prints( "\n\nRead from file with no content\n", ConsoleOutput );
-	Create( "dir_test/emptyFile" );
-	fd = Open( "dir_test/emptyFile" );
-	for( i = 0; i < 128; ++i ) buffer1[i] = 0;
-	Read( buffer1, 128, fd );
-	prints( "Read: ", ConsoleOutput );
-	prints( buffer1, ConsoleOutput );
-	
 	Exit( 0 );
 }

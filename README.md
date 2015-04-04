@@ -71,8 +71,7 @@ The file IO system call test suite contains the following tests:
 	to store their results. It is necessary to guarantee correctness that
 	this directory is empty before execution.
 	1. The first test is what might be expected of a typical user who is 
-		not doing something foolish.
-		
+		not doing something foolish.		
 		The test creates, opens, writes, closes, opens and reads from the file 
 		newFile. After the completion of the read operation the data
 		is printed to stdout.
@@ -92,11 +91,6 @@ The file IO system call test suite contains the following tests:
 	7. This test writes with a size of -1. The file after the call should 
 		remain empty (rwtest).
 	8. This test reads with an invalid size (-1) (rwtest2). The expected output should be nothing.
-	9. This test attempts to create and open a file that the user does not have
-		sufficient permissions on the underlying system for. The file is: /no.permissions
-		This test depends on the user not being able to access the directory /.
-	10. The final test in this suite attempts to read from an empty file (emptyFile).
-		The expected output should be nothing.
 
 ## Process Management System Calls
 	* This test suite tests the execution for the Exec() and Join() calls.
@@ -107,10 +101,7 @@ The file IO system call test suite contains the following tests:
 ## Dazzle
 	* Our implementation does not present any particularly "dazzling" features
 		beyond what was required.
-	* One showing is that the system does detect if the user has access to a path
-		when opening files. This applies only to the UNIX FS however and prevents
-		the OS crashing when insufficient permissiosn are present.
-	* we also believe our system is very robust and would be extremely difficult for
+	* we believe our system is very robust and would be extremely difficult for
 		a user to crash. Malicious users may find exploits but the average user should
 		not be able to crash the system.
 

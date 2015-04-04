@@ -99,20 +99,7 @@ Open_Syscall_Func( unsigned int addr )
 		DEBUG( 'f', "Failed to alloc buffer in open_syscall\n"); 
 		return -1;
 	}
-	
-	/* test if we can open the specific file */
-	if( strstr( buf, "/" ) != NULL )
-	{
-		char tmp[256];
-		strcpy( tmp, buf );
-		dirname( tmp );
-		if( access( tmp, R_OK|W_OK ) != 0 ) // NachOS does not differentiate so we need to check both
-		{
-			DEBUG( 'f', "Insufficient permissions to file: %s\n", buf );
-			return -1;
-		}
-	}
-	
+		
 	/* tell the FS to open it up */
 	file = fileSystem->Open( buf );
 	
